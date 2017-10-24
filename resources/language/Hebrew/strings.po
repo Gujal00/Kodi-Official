@@ -65,8 +65,8 @@ msgid "Most Viewed"
 msgstr "נצפים ביותר"
 
 msgctxt "#30010"
-msgid "Best Rated"
-msgstr "מדורגים הכי גבוה"
+msgid "Hour"
+msgstr "שָׁעָה"
 
 msgctxt "#30011"
 msgid "Today"
@@ -85,8 +85,8 @@ msgid "All Time"
 msgstr "בכל זמן"
 
 msgctxt "#30015"
-msgid "All Users"
-msgstr "כל המשתמשים"
+msgid "Trending"
+msgstr "מגמות"
 
 msgctxt "#30016"
 msgid "Featured"
