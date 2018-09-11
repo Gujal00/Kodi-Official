@@ -180,7 +180,6 @@ def listVideos(url):
         date = item['taken_time']
         thumb = item['thumbnail_large_url']
         views = item['views_total']
-        duration = str(int(duration)/60+1)
         try:
             date = datetime.datetime.fromtimestamp(int(date)).strftime('%Y-%m-%d')
         except:
