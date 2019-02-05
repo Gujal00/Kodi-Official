@@ -1,7 +1,7 @@
 2.3.7 [20190205] 
  - Fix for playing Live Video
  - Add support for limiting quality of Live Streams
- - Supoort New Qualities such as 4K and QuadHD
+ - Support New Qualities such as 4K and QuadHD
  
 2.3.6 [20180914] 
  - Fix for Download Progress not showing properly

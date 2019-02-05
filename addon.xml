@@ -26,9 +26,9 @@
 [B]Version 2.3.7 - 05 Feb 2019[/B] 
  - Fix for playing Live Video
  - Add support for limiting quality of Live Streams
- - Supoort New Qualities such as 4K and QuadHD
+ - Support New Qualities such as 4K and QuadHD
 		</news>
-		<website>http://www.dailymotion.com</website>
+		<website>https://www.dailymotion.com</website>
         <source>https://github.com/Gujal00/plugin.video.dailymotion_com</source>
         <forum>https://forum.kodi.tv/showthread.php?tid=142626</forum>
         <email>gujal at protonmail dot com</email>
