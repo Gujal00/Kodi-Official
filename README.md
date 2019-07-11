@@ -1,5 +1,5 @@
 # plugin.video.dailymotion_com
-## Kodi Addon for playing trailers from Dailymotion website
+## Kodi Addon for playing videos from Dailymotion website
 
 Head to the [Forum for support](https://forum.kodi.tv/showthread.php?tid=142626)
 
