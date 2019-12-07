@@ -4,6 +4,7 @@ python:
 
 install:
   - pip install kodi-addon-checker
+  - pip install requests-cache
 
 before_script:
   - cd $HOME
