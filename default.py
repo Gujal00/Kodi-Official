@@ -347,7 +347,14 @@ def getStreamUrl(vid,live=False):
                     if not live:
 
                         if source == "auto" :
-                            continue
+                            mb = requests.get(m_url,headers=headers).text
+                            mb = re.findall('NAME="([^"]+)",PROGRESSIVE-URI="([^"]+)"',mb)
+                            mb = sorted(mb,key=s,reverse=True)
+                            for quality, strurl in mb:
+                                if int(quality) <= int(maxVideoQuality):
+                                    strurl += '|{}'.format(urllib.parse.urlencode(headers))
+                                    #xbmc.log(str(strurl),xbmc.LOGDEBUG)
+                                    return strurl
 
                         elif  int(source) <= int(maxVideoQuality) :
                             if 'video' in item.get('type',None):
@@ -487,6 +494,7 @@ def favourites(param):
     mode = param[param.find("###MODE###=")+11:]
     mode = mode[:mode.find("###")]
     channelEntry = param[param.find("###USER###="):]
+    user = param[11 + param.find("###USER###="):param.find("###THUMB###")]
     if mode == "ADD":
         if xbmcvfs.exists(channelFavsFile):            
             with open(channelFavsFile, 'r') as fh:
@@ -498,7 +506,7 @@ def favourites(param):
             with open(channelFavsFile, 'a') as fh:
                 fh.write(channelEntry+"\n")
             fh.close()
-        xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30030)+'!,5000)')
+        xbmc.executebuiltin('XBMC.Notification(Info: ,'+ user.encode('utf-8') + ' ' + translation(30030) + '!,5000)')
     elif mode == "REMOVE":
         refresh = param[param.find("###REFRESH###=")+14:]
         refresh = refresh[:refresh.find("###USER###=")]
