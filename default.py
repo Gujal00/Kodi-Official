@@ -350,7 +350,7 @@ def getStreamUrl(vid, live=False):
     content = r.json()
     if content.get('error') is not None:
         Error = (content['error']['title'])
-        xbmc.executebuiltin('XBMC.Notification(Info:,' + Error + ' ,5000)')
+        xbmcgui.Dialog().notification('Info:', Error, _icon, 5000, False)
         return
     else:
         cc = content['qualities']
@@ -440,7 +440,7 @@ def downloadVideo(title, vid):
     headers = {'User-Agent': 'Android'}
     global downloadDir
     if not downloadDir:
-        xbmc.executebuiltin('XBMC.Notification(Download:,' + translation(30110) + '!,5000)')
+        xbmcgui.Dialog().notification('Download:', translation(30110), _icon, 5000, False)
         return
     url = getStreamUrl(vid)
     vidfile = xbmc.makeLegalFilename(downloadDir + title + '.mp4')
@@ -469,7 +469,7 @@ def downloadVideo(title, vid):
         except:
             return tmp_file
     else:
-        xbmc.executebuiltin('XBMC.Notification(Download:,' + translation(30109) + '!,5000)')
+        xbmcgui.Dialog().notification('Download:', translation(30109), _icon, 5000, False)
 
 
 def playArte(aid):
@@ -496,7 +496,7 @@ def playArte(aid):
         listitem = xbmcgui.ListItem(path=base + " playpath=" + playpath + " swfVfy=1 swfUrl=http://videos.arte.tv/blob/web/i18n/view/player_24-3188338-data-5168030.swf")
         xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)
     except:
-        xbmc.executebuiltin('XBMC.Notification(Info:,' + translation(30022) + ' (Arte)!,5000)')
+        xbmcgui.Dialog().notification('Info:', translation(30110) + ' (Arte)!', _icon, 5000, False)
 
 
 def addFav():
@@ -514,7 +514,7 @@ def addFav():
         else:
             with open(channelFavsFile, 'a') as fh:
                 fh.write(channelEntry + "\n")
-        xbmc.executebuiltin('XBMC.Notification(Info:,' + translation(30030) + '!,5000)')
+        xbmcgui.Dialog().notification('Info:', translation(30030), _icon, 5000, False)
 
 
 def favourites(param):
@@ -522,6 +522,8 @@ def favourites(param):
     mode = mode[:mode.find("###")]
     channelEntry = param[param.find("###USER###="):]
     user = param[11 + param.find("###USER###="):param.find("###THUMB###")]
+    if PY2:
+        user = user.encode('utf8')
     if mode == "ADD":
         if xbmcvfs.exists(channelFavsFile):
             with open(channelFavsFile, 'r') as fh:
@@ -533,7 +535,7 @@ def favourites(param):
             with open(channelFavsFile, 'a') as fh:
                 fh.write(channelEntry + "\n")
             fh.close()
-        xbmc.executebuiltin('XBMC.Notification(Info: ,' + user.encode('utf-8') + ' ' + translation(30030) + '!,5000)')
+        xbmcgui.Dialog().notification('Info:', user + ' ' + translation(30030) + '!', _icon, 5000, False)
     elif mode == "REMOVE":
         refresh = param[param.find("###REFRESH###=") + 14:]
         refresh = refresh[:refresh.find("###USER###=")]
