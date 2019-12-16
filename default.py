@@ -294,7 +294,7 @@ def search():
     keyboard = xbmc.Keyboard('', translation(30002))
     keyboard.doModal()
     if keyboard.isConfirmed() and keyboard.getText():
-        search_string = keyboard.getText().replace(" ", "+")
+        search_string = urllib.parse.quote_plus(keyboard.getText())
         listVideos(urlMain + "/videos?fields=description,duration,id,owner.username,taken_time,thumbnail_large_url,title,views_total&search=" + search_string + "&sort=relevance&limit=" + itemsPerPage + "&family_filter=" + familyFilter + "&localization=" + language + "&page=1")
 
 
@@ -302,7 +302,7 @@ def searchLive():
     keyboard = xbmc.Keyboard('', translation(30002) + ' ' + translation(30003))
     keyboard.doModal()
     if keyboard.isConfirmed() and keyboard.getText():
-        searchl_string = keyboard.getText().replace(" ", "+")
+        searchl_string = urllib.parse.quote_plus(keyboard.getText())
         listLive(urlMain + "/videos?fields=id,thumbnail_large_url,title,views_last_hour&live_onair=1&search=" + searchl_string + "&limit=" + itemsPerPage + "&family_filter=" + familyFilter + "&localization=" + language + "&page=1")
 
 
@@ -310,7 +310,7 @@ def searchUser():
     keyboard = xbmc.Keyboard('', translation(30002) + ' ' + translation(30007))
     keyboard.doModal()
     if keyboard.isConfirmed() and keyboard.getText():
-        searchl_string = keyboard.getText().replace(" ", "+")
+        searchl_string = urllib.parse.quote_plus(keyboard.getText())
         listUsers(urlMain + "/users?fields=username,avatar_large_url,videos_total,views_total&search=" + searchl_string + "&limit=" + itemsPerPage + "&family_filter=" + familyFilter + "&localization=" + language + "&page=1")
 
 
