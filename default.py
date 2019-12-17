@@ -1,5 +1,19 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+'''
+    Dailymotion_com
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
 
 from future import standard_library
 standard_library.install_aliases()
@@ -57,6 +71,7 @@ itemsPerPage = addon.getSetting("itemsPerPage")
 itemsPage = ["25", "50", "75", "100"]
 itemsPerPage = itemsPage[int(itemsPerPage)]
 urlMain = "https://api.dailymotion.com"
+
 
 class MLStripper(HTMLParser):
     def __init__(self):
@@ -299,7 +314,8 @@ def search(url):
         url2 = url.replace("&search=", "&search=" + str(search_string))
         listVideos(url2)
 
-        addtoHistory({'name': keyboard.getText(),'url': urllib.parse.quote_plus(url2) ,'mode':'listVideos'})
+        addtoHistory({'name': keyboard.getText(), 'url': urllib.parse.quote_plus(url2), 'mode': 'listVideos'})
+
 
 def searchLive():
     keyboard = xbmc.Keyboard('', translation(30002) + ' ' + translation(30003))
@@ -672,24 +688,26 @@ def addUserFavDir(name, url, mode, iconimage):
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
     return ok
 
+
 def addtoHistory(item):
     if xbmcvfs.exists(HistoryFile):
         with open(HistoryFile, 'r') as fh:
             content = fh.read()
-        if content.find(item["url"]) == -1: #use url to verify
+        if content.find(item["url"]) == -1:  # use url to verify
             with open(HistoryFile, 'a') as fh:
                 fh.write(json.dumps(item) + "\n")
     else:
         with open(HistoryFile, 'a') as fh:
             fh.write(json.dumps(item) + "\n")
 
+
 def History():
     if xbmcvfs.exists(HistoryFile):
         with open(HistoryFile, 'r') as fh:
             content = fh.readlines()
-            if len(content) > 0 :
+            if len(content) > 0:
                 content = [json.loads(x) for x in content]
-                reversed_content = content[::-1] #reverse order
+                reversed_content = content[::-1]  # reverse order
                 addHistoryDir(reversed_content)
                 addDir("[COLOR red]" + translation(30116) + "[/COLOR]", "", "delHistory", _ipath + "search.png")
                 xbmcplugin.setContent(pluginhandle, "addons")
@@ -697,10 +715,11 @@ def History():
     if force_mode:
         xbmc.executebuiltin('Container.SetViewMode({})'.format(menu_mode))
 
-    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=False) #kodi testbuild py3 13/12/19 W10-x64
+    xbmcplugin.endOfDirectory(pluginhandle, cacheToDisc=False)  # kodi testbuild py3 13/12/19 W10-x64
+
 
 def delHistory():
-    if xbmcgui.Dialog().yesno("Dailymotion","") == True:
+    if xbmcgui.Dialog().yesno("Dailymotion", ""):
         with open(HistoryFile, 'w') as fh:
             fh.write("")
 
@@ -710,7 +729,7 @@ def addHistoryDir(listofdicts):
 
     for item in listofdicts:
         list_item = xbmcgui.ListItem(label=item["name"])
-        list_item.setArt({'thumb': _ipath + "search.png",'icon': _ipath + "search.png"})
+        list_item.setArt({'thumb': _ipath + "search.png", 'icon': _ipath + "search.png"})
         list_item.setInfo(type="Video", infoLabels={"genre": "History"})
         url = sys.argv[0] + "?url=" + item["url"] + "&mode=" + item["mode"]
 
@@ -718,6 +737,7 @@ def addHistoryDir(listofdicts):
 
     ok = xbmcplugin.addDirectoryItems(pluginhandle, listoflists, len(listoflists))
     return ok
+
 
 params = parameters_string_to_dict(sys.argv[2])
 mode = urllib.parse.unquote_plus(params.get('mode', ''))
