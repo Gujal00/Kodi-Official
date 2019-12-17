@@ -28,6 +28,7 @@ _fanart = addon.getAddonInfo('fanart')
 _path = addon.getAddonInfo('path')
 _ipath = _path + '/resources/images/'
 channelFavsFile = xbmc.translatePath("special://profile/addon_data/" + addonID + "/" + addonID + ".favorites")
+HistoryFile = xbmc.translatePath("special://profile/addon_data/" + addonID + "/" + addonID + ".history")
 cookie_file = xbmc.translatePath("special://profile/addon_data/" + addonID + "/cookies")
 pDialog = xbmcgui.DialogProgress()
 familyFilter = '1'
@@ -56,7 +57,6 @@ itemsPerPage = addon.getSetting("itemsPerPage")
 itemsPage = ["25", "50", "75", "100"]
 itemsPerPage = itemsPage[int(itemsPerPage)]
 urlMain = "https://api.dailymotion.com"
-
 
 class MLStripper(HTMLParser):
     def __init__(self):
@@ -90,9 +90,10 @@ def index():
     addDir(translation(30003), urlMain + "/videos?fields=id,thumbnail_large_url,title,views_last_hour&availability=1&live_onair=1&sort=visited-month&limit=" + itemsPerPage + "&family_filter=" + familyFilter + "&localization=" + language + "&page=1", 'listLive', _ipath + "live.png")
     addDir(translation(30006), "", 'listChannels', _ipath + "channels.png")
     addDir(translation(30007), urlMain + "/users?fields=username,avatar_large_url,videos_total,views_total&sort=popular&limit=" + itemsPerPage + "&family_filter=" + familyFilter + "&localization=" + language + "&page=1", 'listUsers', _ipath + "users.png")
-    addDir(translation(30002), "", 'search', _ipath + "search.png")
+    addDir(translation(30002), urlMain + "/videos?fields=description,duration,id,owner.username,taken_time,thumbnail_large_url,title,views_total&search=&sort=relevance&limit=" + itemsPerPage + "&family_filter=" + familyFilter + "&localization=" + language + "&page=1", 'search', _ipath + "search.png")
     addDir(translation(30002) + " " + translation(30003), "", 'livesearch', _ipath + "search_live.png")
     addDir(translation(30002) + " " + translation(30007), "", 'usersearch', _ipath + "search_users.png")
+    addDir(translation(30115), "", "History", _ipath + "search.png")
     if dmUser:
         addDir(translation(30034), "", "personalMain", _ipath + "my_stuff.png")
     else:
@@ -290,13 +291,15 @@ def listLive(url):
     xbmcplugin.endOfDirectory(pluginhandle)
 
 
-def search():
+def search(url):
     keyboard = xbmc.Keyboard('', translation(30002))
     keyboard.doModal()
     if keyboard.isConfirmed() and keyboard.getText():
         search_string = urllib.parse.quote_plus(keyboard.getText())
-        listVideos(urlMain + "/videos?fields=description,duration,id,owner.username,taken_time,thumbnail_large_url,title,views_total&search=" + search_string + "&sort=relevance&limit=" + itemsPerPage + "&family_filter=" + familyFilter + "&localization=" + language + "&page=1")
+        url2 = url.replace("&search=", "&search=" + str(search_string))
+        listVideos(url2)
 
+        addtoHistory({'name': keyboard.getText(),'url': urllib.parse.quote_plus(url2) ,'mode':'listVideos'})
 
 def searchLive():
     keyboard = xbmc.Keyboard('', translation(30002) + ' ' + translation(30003))
@@ -669,6 +672,52 @@ def addUserFavDir(name, url, mode, iconimage):
     ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
     return ok
 
+def addtoHistory(item):
+    if xbmcvfs.exists(HistoryFile):
+        with open(HistoryFile, 'r') as fh:
+            content = fh.read()
+        if content.find(item["url"]) == -1: #use url to verify
+            with open(HistoryFile, 'a') as fh:
+                fh.write(json.dumps(item) + "\n")
+    else:
+        with open(HistoryFile, 'a') as fh:
+            fh.write(json.dumps(item) + "\n")
+
+def History():
+    if xbmcvfs.exists(HistoryFile):
+        with open(HistoryFile, 'r') as fh:
+            content = fh.readlines()
+            if len(content) > 0 :
+                content = [json.loads(x) for x in content]
+                reversed_content = content[::-1] #reverse order
+                addHistoryDir(reversed_content)
+                addDir("[COLOR red]" + translation(30116) + "[/COLOR]", "", "delHistory", _ipath + "search.png")
+                xbmcplugin.setContent(pluginhandle, "addons")
+
+    if force_mode:
+        xbmc.executebuiltin('Container.SetViewMode({})'.format(menu_mode))
+
+    xbmcplugin.endOfDirectory(pluginhandle,cacheToDisc=False) #kodi testbuild py3 13/12/19 W10-x64
+
+def delHistory():
+    if xbmcgui.Dialog().yesno("Dailymotion","") == True:
+        with open(HistoryFile, 'w') as fh:
+            fh.write("")
+
+
+def addHistoryDir(listofdicts):
+    listoflists = []
+
+    for item in listofdicts:
+        list_item = xbmcgui.ListItem(label=item["name"])
+        list_item.setArt({'thumb': _ipath + "search.png",'icon': _ipath + "search.png"})
+        list_item.setInfo(type="Video", infoLabels={"genre": "History"})
+        url = sys.argv[0] + "?url=" + item["url"] + "&mode=" + item["mode"]
+
+        listoflists.append((url, list_item, True))
+
+    ok = xbmcplugin.addDirectoryItems(pluginhandle, listoflists, len(listoflists))
+    return ok
 
 params = parameters_string_to_dict(sys.argv[2])
 mode = urllib.parse.unquote_plus(params.get('mode', ''))
@@ -716,10 +765,14 @@ elif mode == "queueVideo":
 elif mode == "downloadVideo":
     downloadVideo(name, url)
 elif mode == 'search':
-    search()
+    search(url)
 elif mode == 'livesearch':
     searchLive()
 elif mode == 'usersearch':
     searchUser()
+elif mode == 'History':
+    History()
+elif mode == 'delHistory':
+    delHistory()
 else:
     index()
