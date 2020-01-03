@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.imdb.trailers" name="IMDb Trailers" version="2.1.8" provider-name="gujal">
+<addon id="plugin.video.imdb.trailers" name="IMDb Trailers" version="2.1.9Beta" provider-name="gujal">
   <requires>
     <import addon="xbmc.python" version="2.26.0"/>
     <import addon="script.module.requests" version="2.4.3"/>
@@ -11,6 +11,7 @@
     <provides>video</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
+    <reuselanguageinvoker>false</reuselanguageinvoker>
     <summary lang="en_GB">IMDb Trailers video add-on</summary>
     <summary lang="tr_TR">IMDb Fragmanları video eklentisi</summary>
     <summary lang="es_ES">IMDb Trailers video añadido</summary>
