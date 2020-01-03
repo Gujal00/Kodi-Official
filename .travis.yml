@@ -20,5 +20,5 @@ before_script:
 script:
 # - tox
 # - tox -e flake8
-- pylint resources/lib/
-# - kodi-addon-checker $TRAVIS_BUILD_DIR --branch=krypton
+# - pylint resources/lib/
+- kodi-addon-checker $TRAVIS_BUILD_DIR --branch=krypton
