@@ -1,0 +1,8 @@
+future
+kodi-addon-checker
+beautifulsoup4
+polib
+pylint
+requests
+requests-cache
+tox-travis
