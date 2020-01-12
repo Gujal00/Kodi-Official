@@ -337,7 +337,8 @@ def playVideo(vid, live=False):
         url = getStreamUrl(vid, live=True)
     else:
         url = getStreamUrl(vid)
-    xbmc.log("DAILYMOTION - url = {}".format(url), xbmc.LOGDEBUG)
+    xbmc.log("DAILYMOTION - FinalUrl = {}".format(url), xbmc.LOGDEBUG)
+
     if url:
         listitem = xbmcgui.ListItem(path=url)
         if '.m3u8' in url:
@@ -385,8 +386,10 @@ def getStreamUrl(vid, live=False):
                 if m_url:
                     if not live:
                         if source == "auto":
-                            mb = requests.get(m_url, headers=headers).text
-                            mb = re.findall('NAME="([^"]+)",PROGRESSIVE-URI="([^"]+)"', mb)
+                            mbtext = requests.get(m_url, headers=headers).text
+                            mb = re.findall('NAME="([^"]+)",PROGRESSIVE-URI="([^"]+)"', mbtext)
+                            if checkUrl(mb[-1][1]) is False:
+                                mb = re.findall(r'NAME="([^"]+)".+\n([^\n]+)', mbtext)
                             mb = sorted(mb, key=s, reverse=True)
                             for quality, strurl in mb:
                                 quality = quality.split("@")[0]
@@ -580,6 +583,20 @@ def getUrl2(url):
               'ff': ff}
     r = requests.get(url, headers=headers, cookies=cookie)
     return r.text
+
+
+def checkUrl(url):
+    if familyFilter == "1":
+        ff = "on"
+    else:
+        ff = "off"
+    xbmc.log('DAILYMOTION - Check url is {}'.format(url), xbmc.LOGDEBUG)
+    headers = {'User-Agent': 'Android'}
+    cookie = {'lang': language,
+              'ff': ff}
+    r = requests.head(url, headers=headers, cookies=cookie)
+    status = r.status_code == 200
+    return status
 
 
 def parameters_string_to_dict(parameters):
