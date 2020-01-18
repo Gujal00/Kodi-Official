@@ -71,7 +71,7 @@ itemsPerPage = addon.getSetting("itemsPerPage")
 itemsPage = ["25", "50", "75", "100"]
 itemsPerPage = itemsPage[int(itemsPerPage)]
 urlMain = "https://api.dailymotion.com"
-
+_UA = 'Mozilla/5.0 (Linux; Android 7.1.1; Pixel Build/NMF26O) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36'
 
 class MLStripper(HTMLParser):
     def __init__(self):
@@ -362,7 +362,7 @@ def getStreamUrl(vid, live=False):
     else:
         ff = "off"
     xbmc.log('DAILYMOTION - url is {}'.format(url), xbmc.LOGDEBUG)
-    headers = {'User-Agent': 'Android'}
+    headers = {'User-Agent': _UA}
     cookie = {'lang': language,
               'ff': ff}
     r = requests.get("https://www.dailymotion.com/player/metadata/video/" + vid, headers=headers, cookies=cookie)
@@ -457,7 +457,7 @@ def queueVideo(url, name):
 
 
 def downloadVideo(title, vid):
-    headers = {'User-Agent': 'Android'}
+    headers = {'User-Agent': _UA}
     global downloadDir
     if not downloadDir:
         xbmcgui.Dialog().notification('Download:', translation(30110), _icon, 5000, False)
@@ -578,7 +578,7 @@ def getUrl2(url):
     else:
         ff = "off"
     xbmc.log('DAILYMOTION - The url is {}'.format(url), xbmc.LOGDEBUG)
-    headers = {'User-Agent': 'Android'}
+    headers = {'User-Agent': _UA}
     cookie = {'lang': language,
               'ff': ff}
     r = requests.get(url, headers=headers, cookies=cookie)
@@ -591,7 +591,7 @@ def checkUrl(url):
     else:
         ff = "off"
     xbmc.log('DAILYMOTION - Check url is {}'.format(url), xbmc.LOGDEBUG)
-    headers = {'User-Agent': 'Android'}
+    headers = {'User-Agent': _UA}
     cookie = {'lang': language,
               'ff': ff}
     r = requests.head(url, headers=headers, cookies=cookie)
