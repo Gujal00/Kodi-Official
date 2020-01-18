@@ -362,7 +362,9 @@ def getStreamUrl(vid, live=False):
     else:
         ff = "off"
     xbmc.log('DAILYMOTION - url is {}'.format(url), xbmc.LOGDEBUG)
-    headers = {'User-Agent': _UA}
+    headers = {'User-Agent': _UA,
+               'Origin': 'https://www.dailymotion.com',
+               'Referer': 'https://www.dailymotion.com/'}
     cookie = {'lang': language,
               'ff': ff}
     r = requests.get("https://www.dailymotion.com/player/metadata/video/" + vid, headers=headers, cookies=cookie)
@@ -400,7 +402,7 @@ def getStreamUrl(vid, live=False):
 
                         elif int(source) <= int(maxVideoQuality):
                             if 'video' in item.get('type', None):
-                                return m_url
+                                return m_url + '|{}'.format(urllib.parse.urlencode(headers))
 
                     else:
                         m_url = m_url.replace('dvr=true&', '')
@@ -409,8 +411,6 @@ def getStreamUrl(vid, live=False):
                             the_url = m_url[0] + '?redirect=0&sec=' + urllib.parse.quote(m_url[1])
                             rr = requests.get(the_url, cookies=r.cookies.get_dict(), headers=headers)
                             mburl = re.findall('(http.+)', rr.text)[0].split('#cell')[0]
-                            headers.update({'Origin': 'https://www.dailymotion.com',
-                                            'Referer': 'https://www.dailymotion.com/'})
                             mb = requests.get(mburl, headers=headers).text
                             mb = re.findall('NAME="([^"]+)"\n(.+)', mb)
                             mb = sorted(mb, key=s, reverse=True)
@@ -591,7 +591,9 @@ def checkUrl(url):
     else:
         ff = "off"
     xbmc.log('DAILYMOTION - Check url is {}'.format(url), xbmc.LOGDEBUG)
-    headers = {'User-Agent': _UA}
+    headers = {'User-Agent': _UA,
+               'Referer': 'https://www.dailymotion.com/',
+               'Origin': 'https://www.dailymotion.com'}
     cookie = {'lang': language,
               'ff': ff}
     r = requests.head(url, headers=headers, cookies=cookie)
