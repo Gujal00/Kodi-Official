@@ -73,6 +73,7 @@ itemsPerPage = itemsPage[int(itemsPerPage)]
 urlMain = "https://api.dailymotion.com"
 _UA = 'Mozilla/5.0 (Linux; Android 7.1.1; Pixel Build/NMF26O) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36'
 
+
 class MLStripper(HTMLParser):
     def __init__(self):
         self.reset()
@@ -342,7 +343,9 @@ def playVideo(vid, live=False):
     if url:
         listitem = xbmcgui.ListItem(path=url)
         if '.m3u8' in url:
-            listitem.setMimeType("application/vnd.apple.mpegurl")
+            listitem.setMimeType("application/x-mpegURL")
+        else:
+            listitem.setMimeType("video/mp4")
         listitem.setContentLookup(False)
         xbmcplugin.setResolvedUrl(pluginhandle, True, listitem=listitem)
     else:
@@ -390,13 +393,13 @@ def getStreamUrl(vid, live=False):
                         if source == "auto":
                             mbtext = requests.get(m_url, headers=headers).text
                             mb = re.findall('NAME="([^"]+)",PROGRESSIVE-URI="([^"]+)"', mbtext)
-                            if checkUrl(mb[-1][1]) is False:
+                            if checkUrl(mb[-1][1].split('#cell')[0]) is False:
                                 mb = re.findall(r'NAME="([^"]+)".+\n([^\n]+)', mbtext)
                             mb = sorted(mb, key=s, reverse=True)
                             for quality, strurl in mb:
                                 quality = quality.split("@")[0]
                                 if int(quality) <= int(maxVideoQuality):
-                                    strurl += '|{}'.format(urllib.parse.urlencode(headers))
+                                    strurl = strurl.split('#cell')[0] + '|{}'.format(urllib.parse.urlencode(headers))
                                     xbmc.log(str(strurl), xbmc.LOGDEBUG)
                                     return strurl
 
@@ -422,6 +425,8 @@ def getStreamUrl(vid, live=False):
                                         strurl = strurl1 + strurl
                                     strurl += '|{}'.format(urllib.parse.urlencode(headers))
                                     return strurl
+                    if type(m_url) is list:
+                        m_url = '?sec='.join(m_url)
                     other_playable_url.append(m_url)
 
         if len(other_playable_url) > 0:  # probably not needed, only for last resort
