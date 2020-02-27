@@ -7,11 +7,11 @@
 	  <import addon="script.module.beautifulsoup4" version="4.0.0"/>
     <import addon="script.module.future" version="0.0.1"/>
   </requires>
-  <extension point="xbmc.python.pluginsource" library="addon.py">
+  <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>video</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
-    <reuselanguageinvoker>false</reuselanguageinvoker>
+    <!-- <reuselanguageinvoker>false</reuselanguageinvoker> -->
     <summary lang="en_GB">IMDb Trailers video add-on</summary>
     <summary lang="tr_TR">IMDb Fragmanları video eklentisi</summary>
     <summary lang="es_ES">IMDb Trailers video añadido</summary>
