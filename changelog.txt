@@ -1,5 +1,8 @@
 plugin.video.imdb.trailers:
 ---------------------------
+v2.1.10 (29.02.2020)
+[fix] Python2 syntax issue breaking on Kodi18
+
 v2.1.9 (28.02.2020)
 [fix] Playback shifted to HLS
 [new] Search option
