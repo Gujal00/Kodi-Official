@@ -346,9 +346,11 @@ class Main(object):
             hls = fetch(vid)
             hlspath = re.findall(r'(http.+/)', vid)[0]
             quals = re.findall(r'BANDWIDTH=([^,]+)[^x]+x(\d+).+\n([^\n]+)', hls)
-            quals = quals.sort(key=lambda x: int(x[0]), reverse=True)
             if DEBUG:
                 self.log('Found %s qualities' % len(quals))
+            quals = sorted(quals, key=lambda x: int(x[0]), reverse=True)
+            if DEBUG:
+                self.log('Found %s qualities after sort' % len(quals))
             for bw, qual, svid in quals:
                 if int(qual) <= quality:
                     videoUrl = hlspath + svid
