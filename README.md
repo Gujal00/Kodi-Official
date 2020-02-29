@@ -5,4 +5,4 @@
 ![Kodi Version](https://img.shields.io/badge/kodi-leia%2B-success.svg)
 ![Contributors](https://img.shields.io/github/contributors/Gujal00/plugin.video.imdb.trailers.svg)
 
-Head to the [Forum for support](https://forum.kodi.tv/showthread.php?tid=95603)
+Head to the [Forum for support](https://forum.kodi.tv/showthread.php?tid=352127)
