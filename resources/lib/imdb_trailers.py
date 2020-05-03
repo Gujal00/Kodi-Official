@@ -18,9 +18,6 @@
 """
 
 # Imports
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 import re
 import sys
 import datetime
@@ -30,13 +27,13 @@ import xbmcgui
 import xbmcplugin
 import xbmcaddon
 import xbmcvfs
+import base64
 from bs4 import BeautifulSoup, SoupStrainer
 import requests
 import requests_cache
-import urllib.parse
-import html.parser
-
-PY3 = sys.version_info[0] == 3
+import six
+from six.moves import urllib
+from six.moves import html_parser
 
 # DEBUG
 DEBUG = False
@@ -186,12 +183,12 @@ class Main(object):
         if DEBUG:
             self.log('content_list()')
         videos, jdata = fetchdata(self.parameters('key'))
-        h = html.parser.HTMLParser() if not PY3 else None
+        h = html_parser.HTMLParser()
         for video in videos:
             videoId = video.get('data-videoid')
             jd = jdata[videoId]
 
-            plot = html.unescape(jd['description']) if PY3 else h.unescape(jd['description'])
+            plot = h.unescape(jd['description'])
             director = jd['directorNames']
             cast = jd['starNames']
             title = jd['titleName']
@@ -248,7 +245,7 @@ class Main(object):
             page_data = fetch(SHOWING_URL)
             tlink = SoupStrainer('div', {'id': 'main'})
         else:
-            year, month, day = datetime.date.today().isoformat().split('-')
+            year, month, _ = datetime.date.today().isoformat().split('-')
             page_data = ''
             nyear = int(year)
             for i in range(4):
@@ -262,13 +259,13 @@ class Main(object):
 
         mdiv = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
         videos = mdiv.find_all('table')
-        h = html.parser.HTMLParser() if not PY3 else None
+        h = html_parser.HTMLParser()
 
         for video in videos:
             vdiv = video.find('a', {'itemprop': 'trailer'})
             if vdiv:
                 videoId = vdiv.get('href').split('?')[0].split('/')[-1]
-                plot = html.unescape(video.find(class_='outline').text).strip() if PY3 else h.unescape(video.find(class_='outline').text).strip()
+                plot = h.unescape(video.find(class_='outline').text).strip()
                 tdiv = video.find(class_='image')
                 icon = tdiv.find('img')['src']
                 title = tdiv.find('img')['title']
@@ -320,15 +317,17 @@ class Main(object):
     def get_video_url(self, video_id):
         if DEBUG:
             self.log('get_video_url()')
-        detailsUrl = DETAILS_PAGE.format(video_id)
-        if DEBUG:
-            self.log('detailsURL: %s' % detailsUrl)
-        details = fetch(detailsUrl)
-        if '"playbackDataKey"' in details:
-            vid = re.findall(r'args\s*=\s*.+?playbackDataKey":\[?"([^"]+)', details)[0]
-            vidurl = 'https://m.imdb.com/ve/data/VIDEO_PLAYBACK_DATA?key={}'.format(vid)
-            details = fetch(vidurl)
-        if quality == 480:
+        data = {"type": "VIDEO_PLAYER",
+                "subType": "FORCE_LEGACY",
+                "id": video_id}
+        if six.PY3:
+            data = base64.b64encode(json.dumps(data).encode())
+            vidurl = 'https://m.imdb.com/ve/data/VIDEO_PLAYBACK_DATA?key={}'.format(data.decode())
+        else:
+            data = base64.b64encode(json.dumps(data))
+            vidurl = 'https://m.imdb.com/ve/data/VIDEO_PLAYBACK_DATA?key={}'.format(data)
+        details = fetch(vidurl)
+        if quality == 480 or '"definition":"auto"' not in details:
             vids = re.findall(r'definition":"(\d+)p".+?url":"([^"]+)', details, re.IGNORECASE)
             vids.sort(key=lambda x: int(x[0]), reverse=True)
             if DEBUG:
@@ -351,7 +350,7 @@ class Main(object):
             quals = sorted(quals, key=lambda x: int(x[0]), reverse=True)
             if DEBUG:
                 self.log('Found %s qualities after sort' % len(quals))
-            for bw, qual, svid in quals:
+            for _, qual, svid in quals:
                 if int(qual) <= quality:
                     videoUrl = hlspath + svid
                     if DEBUG:
