@@ -381,7 +381,11 @@ class Main(object):
         iurl = ID_URL.format(self.parameters('imdb'))
         if DEBUG:
             self.log('IMDBURL: %s' % iurl)
-        details = json.loads(fetch(iurl))
+        try:
+            details = json.loads(fetch(iurl))
+        except ValueError:
+            msg = 'No Trailers available'
+            xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
         video_list = details['playlists'][self.parameters('imdb')]['listItems']
         if len(video_list) > 0:
             videoid = video_list[0]['videoId']
@@ -435,5 +439,10 @@ def fetchdata(key):
     tabclass = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
     jdata = BeautifulSoup(page_data, "html.parser", parse_only=jlink)
     items = tabclass.findAll('div', {'class': re.compile('^gridlist-item')})
-    jd = json.loads(jdata.text)
+    try:
+        jd = json.loads(jdata.text)
+    except ValueError:
+        jd = {}
+        msg = 'No Trailers available'
+        xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)        
     return items, jd
