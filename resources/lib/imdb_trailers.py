@@ -444,5 +444,5 @@ def fetchdata(key):
     except ValueError:
         jd = {}
         msg = 'No Trailers available'
-        xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)        
+        xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
     return items, jd
