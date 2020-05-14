@@ -77,8 +77,6 @@ class Main(object):
             self.list_contents3()
         elif ('action=list2' in sys.argv[2]):
             self.list_contents2()
-        elif ('action=list' in sys.argv[2]):
-            self.list_contents()
         elif ('action=play_id' in sys.argv[2]):
             self.play_id()
         elif ('action=play' in sys.argv[2]):
@@ -99,9 +97,6 @@ class Main(object):
                     {'title': _language(30209), 'key': 'anticipated'},
                     {'title': _language(30210), 'key': 'popular'},
                     {'title': _language(30211), 'key': 'recent'},
-                    # {'title': _language(30203), 'key': 'popTab'},
-                    # {'title': _language(30204), 'key': 'recAddTab'},
-                    # {'title': _language(30205), 'key': 'tvTab'},
                     {'title': _language(30206), 'key': 'search'},
                     {'title': _language(30207), 'key': 'cache'}]
         for i in category:
@@ -120,9 +115,7 @@ class Main(object):
             else:
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({'action': 'list3',
                                                                   'key': i['key']})
-            # else:
-            #     url = sys.argv[0] + '?' + urllib.parse.urlencode({'action': 'list',
-            #                                                       'key': i['key']})
+
             xbmcplugin.addDirectoryItems(int(sys.argv[1]), [(url, listitem, True)])
 
         # Sort methods and content type...
@@ -187,65 +180,6 @@ class Main(object):
             msg = 'Need atleast 3 characters'
             xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
             return
-
-    def list_contents(self):
-        if DEBUG:
-            self.log('content_list()')
-        videos, jdata = fetchdata(self.parameters('key'))
-        h = html_parser.HTMLParser()
-        for video in videos:
-            videoId = video.get('data-videoid')
-            jd = jdata[videoId]
-
-            plot = h.unescape(jd['description'])
-            director = jd['directorNames']
-            cast = jd['starNames']
-            title = jd['titleName']
-            tname = jd['trailerName']
-            imdb = jd['titleId']
-            fanart = jd['slateUrl'].split('_')[0] + 'jpg'
-            poster = jd['posterUrl'].split('_')[0] + 'jpg'
-            icon = jd['posterUrl']
-            try:
-                duration = jd['trailerLength']
-            except:
-                duration = 0
-
-            try:
-                tyear = jd['titleNameWithYear']
-                year = int(re.findall(r'\((\d{4})', tyear)[0])
-            except:
-                year = 1900
-
-            listitem = xbmcgui.ListItem(title)
-            listitem.setArt({'thumb': poster,
-                             'icon': icon,
-                             'poster': poster,
-                             'fanart': fanart})
-
-            listitem.setInfo(type='video',
-                             infoLabels={'title': title,
-                                         'originaltitle': tname,
-                                         'plot': plot,
-                                         'year': year,
-                                         'duration': duration,
-                                         'imdbnumber': imdb,
-                                         'director': director,
-                                         'cast': cast})
-
-            listitem.setProperty('IsPlayable', 'true')
-            url = sys.argv[0] + '?' + urllib.parse.urlencode({'action': 'play',
-                                                              'videoid': videoId})
-            xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
-
-        # Sort methods and content type...
-        xbmcplugin.setContent(int(sys.argv[1]), 'movies')
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-        if force_mode:
-            xbmc.executebuiltin('Container.SetViewMode({})'.format(view_mode))
-        # End of directory...
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), True)
 
     def list_contents2(self):
         if DEBUG:
@@ -537,22 +471,6 @@ def fetch(url):
     return data
 
 
-def fetchdata(key):
-    page_data = fetch(CONTENT_URL).text
-    tlink = SoupStrainer('div', {'id': key})
-    jlink = SoupStrainer('script', {'id': 'imdbTrailerJson'})
-    tabclass = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
-    jdata = BeautifulSoup(page_data, "html.parser", parse_only=jlink)
-    items = tabclass.findAll('div', {'class': re.compile('^gridlist-item')})
-    try:
-        jd = json.loads(jdata.text)
-    except ValueError:
-        jd = {}
-        msg = 'No Trailers available'
-        xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
-    return items, jd
-
-
 def fetchdata3(key):
     api_url = 'https://graphql.prod.api.imdb.a2z.com/'
     vpar = {'limit': 100}
@@ -638,7 +556,7 @@ def fetchdata3(key):
     qstr = urllib.parse.quote(query_pt1 + query_pt2, "(")
     items = []
 
-    while len(items) < 100 and ptoken:
+    while len(items) < 200 and ptoken:
         if ptoken != "blank":
             vpar.update({"paginationToken": ptoken})
 
