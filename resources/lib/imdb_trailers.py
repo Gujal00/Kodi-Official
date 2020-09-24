@@ -66,6 +66,7 @@ ID_URL = 'https://www.imdb.com/_json/video/{}'
 DETAILS_PAGE = "https://m.imdb.com/videoplayer/{}"
 USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17'
 quality = int(_settings("video_quality")[:-1])
+LOGINFO = xbmc.LOGINFO if six.PY3 else xbmc.LOGNOTICE
 
 if not xbmcvfs.exists(_addonpath + 'settings.xml'):
     _addon.openSettings()
@@ -460,7 +461,7 @@ class Main(object):
         return _parameters[arg][0]
 
     def log(self, description):
-        xbmc.log("[ADD-ON] '{} v{}': {}".format(_plugin, _version, description), xbmc.LOGNOTICE)
+        xbmc.log("[ADD-ON] '{} v{}': {}".format(_plugin, _version, description), LOGINFO)
 
 
 def fetch(url):
