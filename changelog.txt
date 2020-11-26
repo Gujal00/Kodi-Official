@@ -1,5 +1,12 @@
 plugin.video.imdb.trailers:
 ---------------------------
+v2.1.12 (20200918)
+api changes
+
+v2.1.11 (20200516)
+Add new api calls for categories
+Fix occasional playback issues
+
 v2.1.10 (29.02.2020)
 [fix] Python2 syntax issue breaking on Kodi18
 
