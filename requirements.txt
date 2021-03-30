@@ -4,4 +4,3 @@ polib
 requests
 requests-cache
 six
-kodi-six
