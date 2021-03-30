@@ -2,7 +2,7 @@
 sudo: false
 language: python
 python:
-- '3.7'
+- '3.8'
 
 env:
   PYTHONPATH: .:resources/lib
@@ -15,4 +15,4 @@ before_script:
   - cd $HOME
 
 script:
-- kodi-addon-checker $TRAVIS_BUILD_DIR --branch=krypton
+- kodi-addon-checker $TRAVIS_BUILD_DIR --branch=matrix
