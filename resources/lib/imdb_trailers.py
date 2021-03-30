@@ -22,18 +22,13 @@ import re
 import sys
 import datetime
 import json
-import xbmc
-import xbmcgui
-import xbmcplugin
-import xbmcaddon
-import xbmcvfs
+from kodi_six import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 import base64
 from bs4 import BeautifulSoup, SoupStrainer
 import requests
 import requests_cache
 import six
-from six.moves import urllib
-from six.moves import html_parser
+from six.moves import urllib, html_parser
 
 # DEBUG
 DEBUG = False
@@ -273,7 +268,7 @@ class Main(object):
                 videoId = video.get('latestTrailer').get('id')
                 duration = video.get('latestTrailer').get('runtime').get('value')
                 name = video.get('latestTrailer').get('name').get('value')
-                plot = video.get('latestTrailer').get('description').get('value')
+                plot = video.get('latestTrailer').get('description').get('value') if video.get('latestTrailer').get('description') else ''
                 if plot == name or len(plot) == 0:
                     try:
                         plot = video.get('plot').get('plotText').get('plainText')
@@ -300,7 +295,7 @@ class Main(object):
                 videoId = video.get('id')
                 duration = video.get('runtime').get('value')
                 name = video.get('name').get('value')
-                plot = video.get('description').get('value')
+                plot = video.get('description').get('value') if video.get('description') else ''
                 if plot == name or len(plot) == 0:
                     try:
                         plot = video.get('primaryTitle').get('plot').get('plotText').get('plainText')
