@@ -28,7 +28,15 @@ from bs4 import BeautifulSoup, SoupStrainer
 import requests
 import requests_cache
 import six
-from six.moves import urllib, html_parser
+from six.moves import urllib
+
+# HTMLParser() depreciated in Python 3.4 and removed in Python 3.9
+if sys.version_info >= (3,4,0):
+    import html
+    _html_parser = html
+else:
+    from six.moves import html_parser
+    _html_parser = html_parser.HTMLParser()
 
 # DEBUG
 DEBUG = False
@@ -198,7 +206,7 @@ class Main(object):
 
         mdiv = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
         videos = mdiv.find_all('table')
-        h = html_parser.HTMLParser()
+        h = _html_parser
 
         for video in videos:
             vdiv = video.find('a', {'itemprop': 'trailer'})
