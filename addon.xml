@@ -36,7 +36,7 @@
     <news>v2.1.13 (20210815)
       [fix] html parser breaking on Kodi20
       [fix] handle exceptions such as empty plot or no art
-      [enhancement] Use common plugin cache to improve caching
+      [new] Use common plugin cache to improve caching
     </news>
     <assets>
       <icon>icon.png</icon>

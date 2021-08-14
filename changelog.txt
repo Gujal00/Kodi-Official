@@ -1,11 +1,16 @@
 plugin.video.imdb.trailers:
 ---------------------------
+v2.1.13 (20210815)
+[fix] html parser breaking on Kodi20
+[fix] handle exceptions such as empty plot or no art
+[new] Use common plugin cache to improve caching
+
 v2.1.12 (20200918)
-api changes
+[fix] api changes
 
 v2.1.11 (20200516)
-Add new api calls for categories
-Fix occasional playback issues
+[new] Add new api calls for categories
+[fix] Fix occasional playback issues
 
 v2.1.10 (29.02.2020)
 [fix] Python2 syntax issue breaking on Kodi18
