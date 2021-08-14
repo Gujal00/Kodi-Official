@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.imdb.trailers" name="IMDb Trailers" version="2.1.13+matrix.1~alpha1" provider-name="gujal">
+<addon id="plugin.video.imdb.trailers" name="IMDb Trailers" version="2.1.13+matrix.1" provider-name="gujal">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
     <import addon="script.module.requests" version="2.4.3"/>
-	  <import addon="script.module.requests-cache" version="0.0.1"/>
-	  <import addon="script.module.beautifulsoup4" version="4.0.0"/>
+    <import addon="script.common.plugin.cache" version="2.6.0"/>
+    <import addon="script.module.beautifulsoup4" version="4.0.0"/>
     <import addon="script.module.six" version="1.12.0"/>
     <import addon="script.module.kodi-six" version="0.0.1"/>
   </requires>
@@ -33,8 +33,10 @@
     <forum>https://forum.kodi.tv/showthread.php?tid=352127</forum>
     <website>https://www.imdb.com/trailers/</website>
     <email>gujal at protonmail dot com</email>
-    <news>v2.1.10 (20200229)
-      [fix] Python2 syntax issue breaking on Kodi18
+    <news>v2.1.13 (20210815)
+      [fix] html parser breaking on Kodi20
+      [fix] handle exceptions such as empty plot or no art
+      [enhancement] Use common plugin cache to improve caching
     </news>
     <assets>
       <icon>icon.png</icon>
