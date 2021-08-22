@@ -33,7 +33,7 @@ try:
 except:
     import storageserverdummy as StorageServer
 
-# HTMLParser() depreciated in Python 3.4 and removed in Python 3.9
+# HTMLParser() deprecated in Python 3.4 and removed in Python 3.9
 if sys.version_info >= (3, 4, 0):
     import html
     _html_parser = html
@@ -138,7 +138,7 @@ class Main(object):
         """
         msg = 'Cached Data has been cleared'
         cache.table_name = _plugin
-        cache.cacheDelete('%fetch%')
+        cache.cacheDelete(r'%fetch%')
         xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
 
     def search(self):
@@ -376,15 +376,13 @@ class Main(object):
         data = {"type": "VIDEO_PLAYER",
                 "subType": "FORCE_LEGACY",
                 "id": video_id}
-        if six.PY3:
-            data = base64.b64encode(json.dumps(data).encode())
-            vidurl = 'https://m.imdb.com/ve/data/VIDEO_PLAYBACK_DATA?key={}'.format(data.decode())
-        else:
-            data = base64.b64encode(json.dumps(data))
-            vidurl = 'https://m.imdb.com/ve/data/VIDEO_PLAYBACK_DATA?key={}'.format(data)
+        data = json.dumps(data)
+        data = base64.b64encode(data.encode('utf-8')).decode('utf-8')
+        vidurl = 'https://m.imdb.com/ve/data/VIDEO_PLAYBACK_DATA?key={}'.format(data)
         details = cache.cacheFunction(fetch, vidurl)
-        if quality == 480 or '"definition":"auto"' not in details.lower():
-            vids = re.findall(r'definition":"(\d+)p".+?url":"([^"]+)', details, re.IGNORECASE)
+        details = {i['definition']: i['url'] for i in details[0].get('videoLegacyEncodings', [])}
+        if quality == 480 or 'AUTO' not in details.keys():
+            vids = [(x[:-1], details[x]) for x in details.keys() if 'p' in x]
             vids.sort(key=lambda x: int(x[0]), reverse=True)
             if DEBUG:
                 self.log('Found %s videos' % len(vids))
@@ -392,12 +390,9 @@ class Main(object):
                 if int(qual) <= quality:
                     if DEBUG:
                         self.log('videoURL: %s' % vid)
-                    videoUrl = vid.replace('\\u002F', '/').replace('\\/', '/')
-                    if DEBUG:
-                        self.log('cleaned videoURL: %s' % videoUrl)
-                    return videoUrl
+                    return vid
         else:
-            vid = re.findall(r'definition":"auto".+?url":"([^"]+)', details, re.IGNORECASE)[0]
+            vid = details['AUTO']
             hls = cache.cacheFunction(fetch, vid)
             hlspath = re.findall(r'(http.+/)', vid)[0]
             quals = re.findall(r'BANDWIDTH=([^,]+)[^x]+x(\d+).+\n([^\n]+)', hls)
@@ -437,13 +432,11 @@ class Main(object):
         iurl = ID_URL.format(self.parameters('imdb'))
         if DEBUG:
             self.log('IMDBURL: %s' % iurl)
-        try:
-            details = cache.cacheFunction(fetch, iurl)
-            details = json.loads(details)
-        except ValueError:
-            msg = 'No Trailers available'
-            xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
-        video_list = details['playlists'][self.parameters('imdb')]['listItems']
+
+        details = cache.cacheFunction(fetch, iurl)
+        if not isinstance(details, dict):
+            details = {}
+        video_list = details.get('playlists', {}).get(self.parameters('imdb'), {}).get('listItems', [])
         if len(video_list) > 0:
             videoid = video_list[0]['videoId']
             if DEBUG:
@@ -492,7 +485,8 @@ def fetch(url):
                'Origin': 'https://www.imdb.com'}
     if 'graphql' in url:
         headers.update({'content-type': 'application/json'})
-    data = requests.get(url, headers=headers).text
+    r = requests.get(url, headers=headers)
+    data = r.json() if 'json' in r.headers.get('Content-Type', '').lower() else r.text
     return data
 
 
@@ -592,7 +586,7 @@ def fetchdata3(key):
         vtxt = urllib_parse.quote(json.dumps(vpar).replace(" ", ""))
         data = cache.cacheFunction(fetch, "{0}?operationName={1}&query={2}&variables={3}".format(api_url, opname, qstr, vtxt))
         pages += 1
-        data = json.loads(data).get('data')
+        data = data.get('data')
 
         if key == 'trending' or key == 'anticipated' or key == 'popular':
             if key == 'trending':
