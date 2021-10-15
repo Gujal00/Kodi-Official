@@ -41,9 +41,6 @@ else:
     from six.moves import html_parser
     _html_parser = html_parser.HTMLParser()
 
-# DEBUG
-DEBUG = False
-
 _addon = xbmcaddon.Addon()
 _addonID = _addon.getAddonInfo('id')
 _plugin = _addon.getAddonInfo('name')
@@ -53,7 +50,9 @@ _fanart = _addon.getAddonInfo('fanart')
 _language = _addon.getLocalizedString
 _settings = _addon.getSetting
 _addonpath = 'special://profile/addon_data/{}/'.format(_addonID)
-
+# DEBUG
+DEBUG = _settings("DebugMode") == "true"
+# View Mode
 force_mode = _settings("forceViewMode") == "true"
 if force_mode:
     menu_mode = int(_settings('MenuMode'))
@@ -62,7 +61,7 @@ if force_mode:
 if not xbmcvfs.exists(_addonpath):
     xbmcvfs.mkdir(_addonpath)
 
-cache = StorageServer.StorageServer(_plugin, _settings('timeout'))
+cache = StorageServer.StorageServer(_plugin if six.PY3 else _plugin.encode('utf8'), _settings('timeout'))
 CONTENT_URL = 'https://www.imdb.com/trailers/'
 SHOWING_URL = 'https://www.imdb.com/movies-in-theaters/'
 COMING_URL = 'https://www.imdb.com/movies-coming-soon/{}-{:02}'
@@ -89,6 +88,8 @@ class Main(object):
             self.play()
         elif action == 'search':
             self.search()
+        elif action == 'search_word':
+            self.search_word()
         elif action == 'clear':
             self.clear_cache()
         else:
@@ -136,12 +137,16 @@ class Main(object):
         """
         Clear the cache database.
         """
+        if DEBUG:
+            self.log('clear_cache()')
         msg = 'Cached Data has been cleared'
         cache.table_name = _plugin
         cache.cacheDelete(r'%fetch%')
         xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
 
     def search(self):
+        if DEBUG:
+            self.log('search()')
         keyboard = xbmc.Keyboard()
         keyboard.setHeading('Search IMDb by Title')
         keyboard.doModal()
@@ -149,49 +154,58 @@ class Main(object):
             search_text = urllib_parse.quote(keyboard.getText())
         else:
             search_text = ''
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=False)
         if len(search_text) > 2:
-            url = 'https://www.imdb.com/find?q={}&s=tt'.format(search_text)
-            page_data = cache.cacheFunction(fetch, url)
-            tlink = SoupStrainer('table', {'class': 'findList'})
-            soup = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
-            items = soup.find_all('tr')
-            for item in items:
-                imdb_id = item.find('a').get('href').split('/')[2]
-                title = item.text.strip()
-                icon = item.find('img')['src']
-                poster = icon.split('_')[0] + 'jpg'
-                listitem = xbmcgui.ListItem(title)
-                listitem.setArt({'thumb': poster,
-                                 'icon': icon,
-                                 'poster': poster,
-                                 'fanart': _fanart})
-
-                listitem.setInfo(type='video',
-                                 infoLabels={'title': title,
-                                             'imdbnumber': imdb_id})
-
-                listitem.setProperty('IsPlayable', 'true')
-                url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play_id',
-                                                                  'imdb': imdb_id})
-                xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
-
-            # Sort methods and content type...
-            xbmcplugin.setContent(int(sys.argv[1]), 'movies')
-            xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
-            xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-            if force_mode:
-                xbmc.executebuiltin('Container.SetViewMode({})'.format(view_mode))
-            # End of directory...
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
+            url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'search_word',
+                                                              'keyword': search_text})
+            xbmc.executebuiltin("Container.Update({0})".format(url))
         else:
             msg = 'Need atleast 3 characters'
             xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
-            return
+            xbmc.executebuiltin("Container.Update({0},replace)".format(sys.argv[0]))
+
+    def search_word(self):
+        search_text = self.parameters('keyword')
+        if DEBUG:
+            self.log('search_word("{0}")'.format(search_text))
+        url = 'https://www.imdb.com/find?q={}&s=tt'.format(search_text)
+        page_data = cache.cacheFunction(fetch, url)
+        tlink = SoupStrainer('table', {'class': 'findList'})
+        soup = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
+        items = soup.find_all('tr')
+        for item in items:
+            imdb_id = item.find('a').get('href').split('/')[2]
+            title = item.text.strip()
+            icon = item.find('img')['src']
+            poster = icon.split('_')[0] + 'jpg'
+            listitem = xbmcgui.ListItem(title)
+            listitem.setArt({'thumb': poster,
+                             'icon': icon,
+                             'poster': poster,
+                             'fanart': _fanart})
+
+            listitem.setInfo(type='video',
+                             infoLabels={'title': title})
+
+            listitem.setProperty('IsPlayable', 'true')
+            url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play_id',
+                                                              'imdb': imdb_id})
+            xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
+
+        # Sort methods and content type...
+        xbmcplugin.setContent(int(sys.argv[1]), 'movies')
+        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+        if force_mode:
+            xbmc.executebuiltin('Container.SetViewMode({})'.format(view_mode))
+        # End of directory...
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), updateListing=True, cacheToDisc=False)
 
     def list_contents2(self):
-        if DEBUG:
-            self.log('content_list2()')
         key = self.parameters('key')
+        if DEBUG:
+            self.log('content_list2("{0}")'.format(key))
+
         if key == 'showing':
             page_data = cache.cacheFunction(fetch, SHOWING_URL)
             tlink = SoupStrainer('div', {'id': 'main'})
@@ -220,7 +234,6 @@ class Main(object):
                 tdiv = video.find(class_='image')
                 icon = tdiv.find('img')['src']
                 title = tdiv.find('img')['title']
-                # imdb = tdiv.find('a')['href'].split('/')[-2]
                 poster = icon.split('_')[0] + 'jpg'
                 infos = video.find_all(class_='txt-block')
                 director = []
@@ -233,7 +246,6 @@ class Main(object):
                     cast.append(name.text)
                 labels = {'title': title,
                           'plot': plot,
-                          # 'imdbnumber': imdb,
                           'director': director,
                           'cast': cast}
                 try:
@@ -266,9 +278,10 @@ class Main(object):
         xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
 
     def list_contents3(self):
-        if DEBUG:
-            self.log('content_list3()')
         key = self.parameters('key')
+        if DEBUG:
+            self.log('content_list3("{0}")'.format(key))
+
         videos = cache.cacheFunction(fetchdata3, key)
         for video in videos:
             if DEBUG:
@@ -372,7 +385,7 @@ class Main(object):
 
     def fetch_video_url(self, video_id):
         if DEBUG:
-            self.log('fetch_video_url()')
+            self.log('fetch_video_url("{0})'.format(video_id))
         data = {"type": "VIDEO_PLAYER",
                 "subType": "FORCE_LEGACY",
                 "id": video_id}
@@ -427,20 +440,19 @@ class Main(object):
         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
 
     def play_id(self):
+        imdb_id = self.parameters('imdb')
         if DEBUG:
-            self.log('play_id()')
-        iurl = ID_URL.format(self.parameters('imdb'))
-        if DEBUG:
-            self.log('IMDBURL: %s' % iurl)
+            self.log('play_id("{0})'.format(imdb_id))
 
+        iurl = ID_URL.format(imdb_id)
         details = cache.cacheFunction(fetch, iurl)
         if not isinstance(details, dict):
             details = {}
-        video_list = details.get('playlists', {}).get(self.parameters('imdb'), {}).get('listItems', [])
-        if len(video_list) > 0:
+        video_list = details.get('playlists', {}).get(imdb_id, {}).get('listItems')
+        if video_list:
             videoid = video_list[0]['videoId']
             if DEBUG:
-                self.log('VideoID: %s' % videoid)
+                self.log('VideoID: {0}'.format(videoid))
             title = xbmc.getInfoLabel("ListItem.Title")
             thumbnail = xbmc.getInfoImage("ListItem.Thumb")
             listitem = xbmcgui.ListItem(title)
