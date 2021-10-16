@@ -1,5 +1,10 @@
 plugin.video.imdb.trailers:
 ---------------------------
+v2.1.14 (20211015)
+[fix] code breaking on Kodi18
+[fix] Search dialog popup after playing a searched trailer
+[fix] play by imdb_id
+
 v2.1.13 (20210815)
 [fix] html parser breaking on Kodi20
 [fix] handle exceptions such as empty plot or no art
