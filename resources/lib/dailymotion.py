@@ -258,7 +258,6 @@ def listVideos(url):
     if force_mode:
         xbmc.executebuiltin('Container.SetViewMode({0})'.format(video_mode))
     xbmcplugin.endOfDirectory(pluginhandle)
-    xbmcplugin.endOfDirectory(pluginhandle, updateListing=True, cacheToDisc=False)
 
 
 def listUsers(url):
