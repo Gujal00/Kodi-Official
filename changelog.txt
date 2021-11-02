@@ -1,4 +1,4 @@
-[B]Version 2.4.3 - 02 Nov 2021[/B] 
+2.4.3 [20211102] 
  - Fix search function prompting for keyboard input after playback
  - Fix live playback issues
 
