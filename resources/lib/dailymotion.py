@@ -32,9 +32,14 @@ _icon = addon.getAddonInfo('icon')
 _fanart = addon.getAddonInfo('fanart')
 _path = addon.getAddonInfo('path')
 _ipath = '{0}/resources/images/'.format(_path)
-channelFavsFile = xbmc.translatePath("special://profile/addon_data/{0}/{0}.favorites".format(addonID))
-HistoryFile = xbmc.translatePath("special://profile/addon_data/{0}/{0}.history".format(addonID))
-cookie_file = xbmc.translatePath("special://profile/addon_data/{0}/cookies".format(addonID))
+
+if hasattr(xbmcvfs, "translatePath"):
+    translate_path = xbmcvfs.translatePath
+else:
+    translate_path = xbmc.translatePath
+channelFavsFile = translate_path("special://profile/addon_data/{0}/{0}.favorites".format(addonID))
+HistoryFile = translate_path("special://profile/addon_data/{0}/{0}.history".format(addonID))
+cookie_file = translate_path("special://profile/addon_data/{0}/cookies".format(addonID))
 pDialog = xbmcgui.DialogProgress()
 familyFilter = '1'
 
