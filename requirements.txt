@@ -1,0 +1,6 @@
+kodi-addon-checker
+beautifulsoup4
+polib
+requests
+requests-cache
+six

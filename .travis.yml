@@ -1,12 +1,18 @@
+---
+sudo: false
+dist: focal
 language: python
-python:
-  - "3.7"
+python: 3.8
+
+env:
+  PYTHONPATH: .:resources/lib
+  PYTHONIOENCODING: utf-8
 
 install:
-  - pip install kodi-addon-checker
+- pip install -r requirements.txt
 
 before_script:
   - cd $HOME
 
 script:
-  - kodi-addon-checker $TRAVIS_BUILD_DIR --branch=jarvis
+- kodi-addon-checker $TRAVIS_BUILD_DIR --branch=matrix

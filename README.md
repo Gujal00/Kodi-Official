@@ -15,9 +15,20 @@ Head to the [Forum for support](https://forum.kodi.tv/showthread.php?tid=142626)
 
 DailyMotion streams can be integrated into the video library with strm files.
 
-The syntax for a DailyMotion-URL for video such as 
+The syntax for a DailyMotion-URL for video such as
 `http://www.dailymotion.com/video/%VIDEOID%_DESCRIPTIONTEXT` is
 > plugin://plugin.video.dailymotion_com/?url=%VIDEOID%&mode=playVideo
 
 and for Live Streams the usage is as follows
 > plugin://plugin.video.dailymotion_com/?url=%VIDEOID%&mode=playLiveVideo
+
+## plugin.video.imdb.trailers
+
+### Kodi Addon for playing trailers from IMDb website
+
+![Build Status](https://img.shields.io/travis/Gujal00/plugin.video.imdb.trailers/master.svg)
+![License](https://img.shields.io/badge/license-GPL--3.0--only-success.svg)
+![Kodi Version](https://img.shields.io/badge/kodi-leia%2B-success.svg)
+![Contributors](https://img.shields.io/github/contributors/Gujal00/plugin.video.imdb.trailers.svg)
+
+Head to the [Forum for support](https://forum.kodi.tv/showthread.php?tid=352127)
