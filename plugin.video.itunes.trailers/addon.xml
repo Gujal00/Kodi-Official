@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.video.itunes.trailers" version="1.0.0" name="iTunes Movie Trailers" provider-name="gujal">
+    <requires>
+        <!-- <import addon="xbmc.python" version="2.1.0"/> -->
+        <import addon="script.module.six" version="1.12.0"/>
+        <import addon="script.module.kodi-six" version="0.0.1"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">Browse and Play Trailers from the Apple iTunes Website</summary>
+        <description lang="en_GB">Browse and Play Trailers from Apple iTunes Website. (Forked from the original iTunes Trailer addon by dersphere and tknorris)</description>
+        <platform>all</platform>
+        <website>https://trailers.apple.com/</website>
+        <forum></forum>
+        <email>gujal at protonmail dot com</email>
+        <news>v1.0.0 (20220101)
+          initial release
+        </news>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.jpg</fanart>
+            <screenshot>resources/images/screenshot-01.jpg</screenshot>
+            <screenshot>resources/images/screenshot-02.jpg</screenshot>
+            <screenshot>resources/images/screenshot-03.jpg</screenshot>
+        </assets>
+    </extension>
+</addon>

@@ -1,0 +1,39 @@
+[B]Version 0.0.11[/B]
+- Resolver trailer when downloading
+- Fail gracefully when apple returns no trailer
+- Fix unicode error
+
+[B]Version 0.0.10[/B]
+- Add context item to play most recent trailer
+- Switch to primary trailer source (makes 1080p work)
+- Handle QT redirects internally
+
+[B]Version 0.0.9[/B]
+- Update shared depends to 0.0.10
+
+[B]Version 0.0.8[/B]
+- Move common methds to shared lib
+
+[B]Version 0.0.7[/B]
+- Fail gracefully when trakt API is down.
+
+[B]Version 0.0.6[/B]
+- Fix list name handling
+
+[B]Version 0.0.5[/B]
+- Fix date infolabel
+- Show downloaded indicator
+- Prefer local trailers over remote
+
+[B]Version 0.0.4[/B]
+- Better handle missing years
+
+[B]Version 0.0.3[/B]
+- Cache movies list for 8 hours at a time
+
+[B]Version 0.0.2[/B]
+- Improve Movie matching
+- Don't replace context menus
+
+[B]Version 0.0.1[/B]
+- Initial version
