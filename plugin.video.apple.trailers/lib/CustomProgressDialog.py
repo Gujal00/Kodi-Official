@@ -25,9 +25,9 @@ class ProgressDialog(object):
     dialog = None
 
     def create(self, heading, line1='', line2='', line3=''):
-        addon = xbmcaddon.Addon('script.module.tknorris.shared')
-        path_setting = addon.getSetting('xml_folder').decode('utf-8')
-        addon_path = addon.getAddonInfo('path').decode('utf-8')
+        addon = xbmcaddon.Addon()
+        path_setting = addon.getSetting('xml_folder')
+        addon_path = addon.getAddonInfo('path')
         # if a path is set, try to use it and fallback to the default if it fails
         if path_setting:
             try:

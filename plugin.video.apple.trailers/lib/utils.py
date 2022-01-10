@@ -149,7 +149,7 @@ def download_media(url, path, file_name, translations, progress=None):
             full_path = os.path.join(path, file_name)
             logger.log('Downloading: %s -> %s' % (url, full_path), log_utils.LOGDEBUG)
 
-            path = kodi.translate_path(xbmc.makeLegalFilename(path))
+            path = kodi.translate_path(xbmc.makeLegalFilename(path) if six.PY2 else xbmcvfs.makeLegalFilename(path))
             try:
                 try:
                     xbmcvfs.mkdirs(path)
@@ -179,7 +179,7 @@ def download_media(url, path, file_name, translations, progress=None):
                 if not file_desc.write(data):
                     raise Exception(i18n('failed_write_file'))
 
-                percent_progress = (total_len) * 100 / content_length if content_length > 0 else 0
+                percent_progress = int(total_len * 100 / content_length) if content_length > 0 else 0
                 logger.log('Position : %s / %s = %s%%' % (total_len, content_length, percent_progress), log_utils.LOGDEBUG)
                 pd.update(percent_progress)
 
@@ -216,7 +216,7 @@ def create_legal_filename(title, year):
         filename += ' %s' % (year)
     filename = re.sub(r'(?!%s)[^\w\-_\.]', '.', filename)
     filename = re.sub(r'\.+', '.', filename)
-    xbmc.makeLegalFilename(filename)
+    xbmc.makeLegalFilename(filename) if six.PY2 else xbmcvfs.makeLegalFilename(filename)
     return filename
 
 

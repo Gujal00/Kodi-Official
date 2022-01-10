@@ -192,11 +192,7 @@ def notify(header=None, msg='', duration=2000, sound=None, icon_path=None):
         sound = get_setting('mute_notifications') == 'false'
     if icon_path is None:
         icon_path = _icon
-    try:
-        xbmcgui.Dialog().notification(header, msg, icon_path, duration, sound)
-    except:
-        builtin = "XBMC.Notification(%s,%s, %s, %s)" % (header, msg, duration, icon_path)
-        xbmc.executebuiltin(builtin)
+    xbmcgui.Dialog().notification(header, msg, icon_path, duration, sound)
 
 
 def close_all():
@@ -290,7 +286,7 @@ class WorkingDialog(object):
 
     def update(self, percent):
         if self.wd is not None:
-            self.wd.update(percent)
+            self.wd.update(int(percent))
 
 
 class ProgressDialog(object):
@@ -315,7 +311,7 @@ class ProgressDialog(object):
                 pd = CustomProgressDialog.ProgressDialog()
             else:
                 pd = xbmcgui.DialogProgress()
-            pd.create(self.heading, line1, line2, line3)
+            pd.create(self.heading, line1 + "[CR]" + line2 + "[CR]" + line3)
         return pd
 
     def __enter__(self):
@@ -340,7 +336,7 @@ class ProgressDialog(object):
                 msg = line1 + line2 + line3
                 self.pd.update(percent, self.heading, msg)
             else:
-                self.pd.update(percent, line1, line2, line3)
+                self.pd.update(percent, line1 + "[CR]" + line2 + "[CR]" + line3)
 
 
 class CountdownDialog(object):
@@ -351,6 +347,8 @@ class CountdownDialog(object):
         self.heading = heading
         self.countdown = countdown
         self.interval = interval
+        self.line1 = line1
+        self.line2 = line2
         self.line3 = line3
         if active:
             if xbmc.getCondVisibility('Window.IsVisible(progressdialog)'):
@@ -359,7 +357,7 @@ class CountdownDialog(object):
                 pd = xbmcgui.DialogProgress()
             if not self.line3:
                 line3 = 'Expires in: %s seconds' % (countdown)
-            pd.create(self.heading, line1, line2, line3)
+            pd.create(self.heading, line1 + "[CR]" + line2 + "[CR]" + line3)
             pd.update(100)
             self.pd = pd
 
@@ -384,15 +382,15 @@ class CountdownDialog(object):
         interval = self.interval
         while time_left > 0:
             for _ in range(CountdownDialog.__INTERVALS):
-                sleep(interval * 1000 / CountdownDialog.__INTERVALS)
+                sleep(int(interval * 1000 / CountdownDialog.__INTERVALS))
                 if self.is_canceled():
                     return
                 time_left = expires - int(time.time() - start)
                 if time_left < 0:
                     time_left = 0
-                progress = time_left * 100 / expires
+                progress = int(time_left * 100 / expires)
                 line3 = 'Expires in: %s seconds' % (time_left) if not self.line3 else ''
-                self.update(progress, line3=line3)
+                self.update(progress, self.line1, self.line2, line3)
 
             result = func(*args, **kwargs)
             if result:
@@ -406,4 +404,4 @@ class CountdownDialog(object):
 
     def update(self, percent, line1='', line2='', line3=''):
         if self.pd is not None:
-            self.pd.update(percent, line1, line2, line3)
+            self.pd.update(percent, line1 + "[CR]" + line2 + "[CR]" + line3)

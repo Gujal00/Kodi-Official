@@ -1,5 +1,5 @@
 """
-    iTunes Movie Trailers Kodi Addon
+    Apple Trailers Kodi Addon
     Copyright (C) 2015 tknorris
     Copyright (C) 2022 gujal
 
@@ -18,7 +18,6 @@
 """
 
 STRINGS = {
-    'add_to_cp': 30000,
     'add_to_trakt': 30001,
     'downloading': 30002,
     'failed_create_dir': 30003,

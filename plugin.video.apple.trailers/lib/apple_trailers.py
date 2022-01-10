@@ -1,5 +1,5 @@
 """
-    iTunes Movie Trailers Kodi Addon
+    Apple Trailers Kodi Addon
     Copyright (C) 2016 tknorris
     Copyright (C) 2022 gujal
 
@@ -212,7 +212,7 @@ def add_trakt(title, year=''):
     if index > -1:
         slug = kodi.get_setting('default_slug')
         name = kodi.get_setting('default_list')
-        if not slug:
+        if not name:
             result = utils.choose_list(Trakt_API, translations)
             if result is None:
                 return
@@ -220,7 +220,7 @@ def add_trakt(title, year=''):
                 slug, name = result
 
         item = {'trakt': results[index]['ids']['trakt']}
-        if slug == WATCHLIST_SLUG:
+        if slug == WATCHLIST_SLUG or slug == '':
             trakt_api.add_to_watchlist(SECTIONS.MOVIES, item)
         elif slug:
             trakt_api.add_to_list(SECTIONS.MOVIES, slug, item)
@@ -241,16 +241,16 @@ def set_list():
     result = utils.choose_list(Trakt_API, translations)
     if result is not None:
         slug, name = result
-        kodi.set_setting('default_list', name)
         kodi.set_setting('default_slug', slug)
+        kodi.set_setting('default_list', name)
 
 
 def main(argv=None):
     if sys.argv:
         argv = sys.argv
     queries = kodi.parse_query(sys.argv[2])
-    logger.log('Version: |{0}| Queries: |{1}|'.format(kodi.get_version(), queries), log_utils.LOGNOTICE)
-    logger.log('Args: |{0}|'.format(argv), log_utils.LOGNOTICE)
+    logger.log('Version: |{0}| Queries: |{1}|'.format(kodi.get_version(), queries), log_utils.LOGDEBUG)
+    logger.log('Args: |{0}|'.format(argv), log_utils.LOGDEBUG)
 
     plugin_url = 'plugin://{0}/'.format(kodi.get_id())
     if argv[0] != plugin_url:

@@ -1,5 +1,5 @@
 """
-    iTunes Movie Trailers Kodi Addon
+    Apple Trailers Kodi Addon
     Copyright (C) 2016 tknorris
     Copyright (C) 2022 gujal
 
@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from lib import itunes_trailers
+from lib import apple_trailers
 
 if __name__ == '__main__':
-    itunes_trailers.main()
+    apple_trailers.main()

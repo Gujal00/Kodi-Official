@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <category label="30000">
+        <setting type="lsep" label="30523"/>
+        <setting id="source" type="enum" label="30500" default="0" lvalues="30501|30502|30503|30504"/>
+        <setting id="limit" type="slider" label="30505" default="0" range="0,100" option="int"/>
+        <setting id="cache_limit" type="enum" label="30514" default="0" lvalues="30515|30516|30517"/>
+        <setting id="movies_view" label="30513" type="number" default="0" visible="true"/>
+        <setting id="trailer_stream_quality" type="labelenum" label="30506" default="hd1080" values="hd1080|hd720|sd"/>
+        <setting id="xml_folder" type="folder" label="Custom Progress Dialog XML Folder" visible="true" default=""/>
+        <setting type="lsep" label="30524"/>
+        <setting id="download_path" type="folder" label="30508" source="auto" option="writeable"/>
+        <setting id="down_progress" type="enum" label="30509" lvalues="30510|30511|30512" default="1"/>
+        <setting id="trailer_download_quality" type="labelenum" label="30507" default="hd1080" values="hd1080|hd720|sd"/>
+        <setting type="lsep" label="Trakt.tv"/>
+        <setting id="get_pin" label="30518" type="action" action="RunPlugin(plugin://plugin.video.apple.trailers/?mode=auth_trakt)" option="close" visible="eq(1,))"/>
+        <setting id="trakt_user" label="30519" type="action" action="RunPlugin(plugin://plugin.video.apple.trailers/?mode=auth_trakt)" option="close" visible="!eq(0,)"/>
+        <setting id="use_https" type="bool" label="30520" default="false" enable="!eq(-1,)"/>
+        <setting id="trakt_timeout" type="slider" label="30521" default="30" range="0,120" option="int"  enable="!eq(-2,)"/>
+        <setting id="default_list" label="30522" type="action" action="RunPlugin(plugin://plugin.video.apple.trailers/?mode=set_list)" default="" enable="!eq(-3,)"/>
+        <settind id="default_slug" type="text" default="" visible="false"/>
+        <setting id="trakt_oauth_token" type="text" default="" visible="false"/>
+        <setting id="trakt_refresh_token" type="text" default="" visible="false"/>
+        <setting id="addon_debug" type="bool" label="Addon Debug" default="false" visible="false"/>
+        <setting id="use_cache" type="bool" label="Cache Enabled" default="true" visible="false"/>
+    </category>
+</settings>

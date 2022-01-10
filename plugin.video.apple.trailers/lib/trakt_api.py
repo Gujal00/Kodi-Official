@@ -1,5 +1,5 @@
 """
-    iTunes Movie Trailers Kodi Addon
+    Apple Trailers Kodi Addon
     Copyright (C) 2014 tknorris
     Copyright (C) 2022 gujal
 
@@ -51,7 +51,8 @@ class TransientTraktError(Exception):
     pass
 
 
-BASE_URL = 'api-v2launch.trakt.tv'
+# BASE_URL = 'api-v2launch.trakt.tv'
+BASE_URL = 'api.trakt.tv'
 V2_API_KEY = '587669004d4fe02bcde9b1ff4a5db964574c2db2afadd8fdf0e0690ef0155fc8'
 CLIENT_SECRET = '09e94c82e96fe2f322cc4436d6d048f84ecb1feda58efb003372c4a86599980e'
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
@@ -196,7 +197,7 @@ class Trakt_API():
     def __call_trakt(self, url, method=None, data=None, params=None, auth=True, cache_limit=.25, cached=True):
         if not cached:
             cache_limit = 0
-        json_data = json.dumps(data) if data else None
+        json_data = json.dumps(data).encode('utf-8') if data else None
         headers = {'Content-Type': 'application/json', 'trakt-api-key': V2_API_KEY, 'trakt-api-version': 2}
         url = '%s%s%s' % (self.protocol, BASE_URL, url)
         if params:
@@ -225,7 +226,7 @@ class Trakt_API():
                         data = response.read()
                         if not data:
                             break
-                        result += data
+                        result += data.decode('utf-8')
                     cache._save_func(func_name, args=args, kwargs=kwargs, result=result)
                     break
                 except (ssl.SSLError, socket.timeout) as e:
@@ -245,7 +246,8 @@ class Trakt_API():
                                 raise TransientTraktError('Temporary Trakt Error: ' + str(e))
                         elif e.code == 401 or e.code == 405:
                             # token is fine, profile is private
-                            if e.info().getheader('X-Private-User') == 'true':
+                            # logger.log('@@@@Error (%s)' % (type(e.headers)), log_utils.LOGNOTICE)
+                            if 'X-Private-User' in e.headers and e.headers.get('X-Private-User') == 'true':
                                 raise TraktAuthError('Object is No Longer Available (%s)' % (e.code))
                             # auth failure retry or a token request
                             elif auth_retry or url.endswith('/oauth/token'):
