@@ -62,10 +62,11 @@ if not xbmcvfs.exists(_addonpath):
 
 cache = StorageServer.StorageServer(_plugin if six.PY3 else _plugin.encode('utf8'), _settings('timeout'))
 CONTENT_URL = 'https://www.imdb.com/trailers/'
-SHOWING_URL = 'https://www.imdb.com/movies-in-theaters/'
-COMING_URL = 'https://www.imdb.com/movies-coming-soon/{}-{:02}'
-ID_URL = 'https://www.imdb.com/_json/video/{}'
-DETAILS_PAGE = "https://www.imdb.com/video/{}/"
+SHOWING_URL = 'https://www.imdb.com/showtimes/location/'
+COMING_URL = 'https://www.imdb.com/movies-coming-soon/{}-{:02}'  # https://www.imdb.com/calendar/
+ID_URL = 'https://www.imdb.com/_json/video/{0}'
+SHOWING_TRAILER = 'https://www.imdb.com/showtimes/title/{0}/'
+DETAILS_PAGE = "https://www.imdb.com/video/{0}/"
 USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17'
 quality = int(_settings("video_quality")[:-1])
 LOGINFO = xbmc.LOGINFO if six.PY3 else xbmc.LOGNOTICE
@@ -81,10 +82,14 @@ class Main(object):
             self.list_contents3()
         elif action == 'list2':
             self.list_contents2()
+        elif action == 'list1':
+            self.list_showing()
         elif action == 'play_id':
             self.play_id()
         elif action == 'play':
             self.play()
+        elif action == 'play_showing':
+            self.play_showing()
         elif action == 'search':
             self.search()
         elif action == 'search_word':
@@ -115,7 +120,10 @@ class Main(object):
                 url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'clear'})
             elif i['key'] == 'search':
                 url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'search'})
-            elif i['key'] == 'showing' or i['key'] == 'coming':
+            elif i['key'] == 'showing':
+                url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'list1',
+                                                                  'key': i['key']})
+            elif i['key'] == 'coming':
                 url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'list2',
                                                                   'key': i['key']})
             else:
@@ -200,6 +208,76 @@ class Main(object):
         # End of directory...
         xbmcplugin.endOfDirectory(int(sys.argv[1]), updateListing=True, cacheToDisc=False)
 
+    def list_showing(self):
+        if DEBUG:
+            self.log('list_showing()')
+
+        page_data = cache.cacheFunction(fetch, SHOWING_URL)
+        tlink = SoupStrainer('div', {'class': 'lister-list'})
+        mdiv = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
+        videos = mdiv.find_all('div', {'class': 'lister-item'})
+        h = _html_parser
+
+        for video in videos:
+            imdbId = video.find('div', {'class': 'lister-item-image'}).get('data-tconst')
+            title = video.find('div', {'class': 'title'}).text
+            plot = video.find('p', {'class': ''}).text
+            if six.PY2:
+                title = title.encode('utf-8')
+                plot = plot.encode('utf-8')
+            icon = video.find('img').get('loadlate')
+            poster = icon.split('_')[0] + 'jpg'
+            genre = video.find('span', {'class': 'genre'})
+            genre = genre.text.strip().split(', ') if genre else ''
+            rdate = video.find('span', {'name': 'release_date'}).get('data-value')
+            rating = video.find('span', {'name': 'user_rating'}).get('data-value')
+            mpaa = video.find('span', {'class': 'certificate'})
+            mpaa = mpaa.text.strip() if mpaa else ''
+            year = int(rdate[0:4])
+            premiered = rdate[0:4] + '-' + rdate[4:6] + '-' + rdate[6:]
+            items = video.find_all('p', {'class': 'text-muted'})
+            cast = []
+            director = []
+            for item in items:
+                ms = item.find_all('a')
+                for m in ms:
+                    if 'li_dr_' in m.get('href'):
+                        director.append(m.text.strip().encode('utf-8') if six.PY2 else m.text.strip())
+                    else:
+                        cast.append(m.text.strip().encode('utf-8') if six.PY2 else m.text.strip())
+
+            labels = {'title': h.unescape(title),
+                      'plot': h.unescape(plot),
+                      'director': director,
+                      'cast': cast,
+                      'year': year,
+                      'rating': float(rating),
+                      'premiered': premiered,
+                      'genre': genre,
+                      'mpaa': mpaa}
+
+            listitem = xbmcgui.ListItem(title)
+            listitem.setArt({'thumb': poster,
+                             'icon': icon,
+                             'poster': poster,
+                             'fanart': _fanart})
+
+            listitem.setInfo(type='video', infoLabels=labels)
+
+            listitem.setProperty('IsPlayable', 'true')
+            url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play_showing',
+                                                              'imdb': imdbId})
+            xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
+
+        # Sort methods and content type...
+        xbmcplugin.setContent(int(sys.argv[1]), 'movies')
+        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+        if force_mode:
+            xbmc.executebuiltin('Container.SetViewMode({})'.format(view_mode))
+        # End of directory...
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
+
     def list_contents2(self):
         key = self.parameters('key')
         if DEBUG:
@@ -207,7 +285,7 @@ class Main(object):
 
         if key == 'showing':
             page_data = cache.cacheFunction(fetch, SHOWING_URL)
-            tlink = SoupStrainer('div', {'id': 'main'})
+            tlink = SoupStrainer('div', {'class': 'lister-list'})
         else:
             year, month, _ = datetime.date.today().isoformat().split('-')
             page_data = ''
@@ -222,50 +300,56 @@ class Main(object):
             tlink = SoupStrainer('div', {'class': 'list detail'})
 
         mdiv = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
-        videos = mdiv.find_all('table')
+        videos = mdiv.find_all('div', {'class': 'lister-item'})
         h = _html_parser
 
         for video in videos:
-            vdiv = video.find('a', {'itemprop': 'trailer'})
-            if vdiv:
-                videoId = vdiv.get('href').split('?')[0].split('/')[-1]
-                plot = h.unescape(video.find(class_='outline').text).strip()
-                tdiv = video.find(class_='image')
-                icon = tdiv.find('img')['src']
-                title = tdiv.find('img')['title']
-                poster = icon.split('_')[0] + 'jpg'
-                infos = video.find_all(class_='txt-block')
-                director = []
-                directors = infos[0].find_all('a')
-                for name in directors:
-                    director.append(name.text)
-                cast = []
-                stars = infos[1].find_all('a')
-                for name in stars:
-                    cast.append(name.text)
-                labels = {'title': title,
-                          'plot': plot,
-                          'director': director,
-                          'cast': cast}
-                try:
-                    year = int(re.findall(r'\((\d{4})', title)[0])
-                    title = re.sub(r'\s\(\d{4}\)', '', title)
-                    labels.update({'title': title, 'year': year})
-                except IndexError:
-                    pass
+            imdbId = video.find('div', {'class': 'lister-item-image'}).get('data-tconst')
+            title = video.find('div', {'class': 'title'}).text
+            plot = video.find('p', {'class': ''}).text
+            icon = video.find('img').get('loadlate')
+            poster = icon.split('_')[0] + 'jpg'
+            genre = video.find('span', {'class': 'genre'})
+            genre = genre.text.strip().split(', ') if genre else ''
+            rdate = video.find('span', {'name': 'release_date'}).get('data-value')
+            rating = video.find('span', {'name': 'user_rating'}).get('data-value')
+            mpaa = video.find('span', {'class': 'certificate'})
+            mpaa = mpaa.text.strip() if mpaa else ''
+            year = int(rdate[0:4])
+            premiered = rdate[0:4] + '-' + rdate[4:6] + '-' + rdate[6:]
+            items = video.find_all('p', {'class': 'text-muted'})
+            cast = []
+            director = []
+            for item in items:
+                ms = item.find_all('a')
+                for m in ms:
+                    if 'li_dr_' in m.get('href'):
+                        director.append(m.text)
+                    else:
+                        cast.append(m.text.strip())
 
-                listitem = xbmcgui.ListItem(title)
-                listitem.setArt({'thumb': poster,
-                                 'icon': icon,
-                                 'poster': poster,
-                                 'fanart': _fanart})
+            labels = {'title': h.unescape(title),
+                      'plot': h.unescape(plot),
+                      'director': director,
+                      'cast': cast,
+                      'year': year,
+                      'rating': float(rating),
+                      'premiered': premiered,
+                      'genre': genre,
+                      'mpaa': mpaa}
 
-                listitem.setInfo(type='video', infoLabels=labels)
+            listitem = xbmcgui.ListItem(title)
+            listitem.setArt({'thumb': poster,
+                             'icon': icon,
+                             'poster': poster,
+                             'fanart': _fanart})
 
-                listitem.setProperty('IsPlayable', 'true')
-                url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play',
-                                                                  'videoid': videoId})
-                xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
+            listitem.setInfo(type='video', infoLabels=labels)
+
+            listitem.setProperty('IsPlayable', 'true')
+            url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play_showing',
+                                                              'imdb': imdbId})
+            xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
 
         # Sort methods and content type...
         xbmcplugin.setContent(int(sys.argv[1]), 'movies')
@@ -421,6 +505,33 @@ class Main(object):
 
         listitem.setPath(cache.cacheFunction(self.fetch_video_url, self.parameters('videoid')))
         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
+
+    def play_showing(self):
+        imdb_id = self.parameters('imdb')
+        if DEBUG:
+            self.log('play_showing()')
+
+        iurl = SHOWING_TRAILER.format(imdb_id)
+        page_data = cache.cacheFunction(fetch, iurl)
+        r = re.search(r'data-video="(.*?)"\s*itemprop="trailer"', page_data)
+        if r:
+            title = xbmc.getInfoLabel("ListItem.Title")
+            thumbnail = xbmc.getInfoImage("ListItem.Thumb")
+            plot = xbmc.getInfoLabel("ListItem.Plot")
+            # only need to add label, icon and thumbnail, setInfo() and addSortMethod() takes care of label2
+            listitem = xbmcgui.ListItem(title)
+            listitem.setArt({'thumb': thumbnail})
+
+            # set the key information
+            listitem.setInfo('video', {'title': title,
+                                       'plot': plot,
+                                       'plotOutline': plot})
+
+            listitem.setPath(cache.cacheFunction(self.fetch_video_url, r.group(1)))
+            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
+        else:
+            msg = 'No Trailers available'
+            xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
 
     def play_id(self):
         imdb_id = self.parameters('imdb')
