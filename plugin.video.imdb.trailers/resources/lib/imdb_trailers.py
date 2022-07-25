@@ -24,7 +24,7 @@ import datetime
 import json
 from kodi_six import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 from bs4 import BeautifulSoup, SoupStrainer
-import requests
+from resources.lib import client
 import six
 from six.moves import urllib_parse
 try:
@@ -67,7 +67,6 @@ COMING_URL = 'https://www.imdb.com/movies-coming-soon/{}-{:02}'  # https://www.i
 ID_URL = 'https://www.imdb.com/_json/video/{0}'
 SHOWING_TRAILER = 'https://www.imdb.com/showtimes/title/{0}/'
 DETAILS_PAGE = "https://www.imdb.com/video/{0}/"
-USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17'
 quality = int(_settings("video_quality")[:-1])
 LOGINFO = xbmc.LOGINFO if six.PY3 else xbmc.LOGNOTICE
 
@@ -254,7 +253,8 @@ class Main(object):
                       'rating': float(rating),
                       'premiered': premiered,
                       'genre': genre,
-                      'mpaa': mpaa}
+                      'mpaa': mpaa,
+                      'mediatype': 'movie'}
 
             listitem = xbmcgui.ListItem(title)
             listitem.setArt({'thumb': poster,
@@ -283,21 +283,17 @@ class Main(object):
         if DEBUG:
             self.log('content_list2("{0}")'.format(key))
 
-        if key == 'showing':
-            page_data = cache.cacheFunction(fetch, SHOWING_URL)
-            tlink = SoupStrainer('div', {'class': 'lister-list'})
-        else:
-            year, month, _ = datetime.date.today().isoformat().split('-')
-            page_data = ''
-            nyear = int(year)
-            for i in range(4):
-                nmonth = int(month) + i
-                if nmonth > 12:
-                    nmonth = nmonth - 12
-                    nyear = int(year) + 1
-                url = COMING_URL.format(nyear, nmonth)
-                page_data += cache.cacheFunction(fetch, url)
-            tlink = SoupStrainer('div', {'class': 'list detail'})
+        year, month, _ = datetime.date.today().isoformat().split('-')
+        page_data = ''
+        nyear = int(year)
+        for i in range(4):
+            nmonth = int(month) + i
+            if nmonth > 12:
+                nmonth = nmonth - 12
+                nyear = int(year) + 1
+            url = COMING_URL.format(nyear, nmonth)
+            page_data += cache.cacheFunction(fetch, url)
+        tlink = SoupStrainer('div', {'class': 'list detail'})
 
         mdiv = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
         videos = mdiv.find_all('div', {'class': 'lister-item'})
@@ -336,7 +332,8 @@ class Main(object):
                       'rating': float(rating),
                       'premiered': premiered,
                       'genre': genre,
-                      'mpaa': mpaa}
+                      'mpaa': mpaa,
+                      'mediatype': 'movie'}
 
             listitem = xbmcgui.ListItem(title)
             listitem.setArt({'thumb': poster,
@@ -371,7 +368,6 @@ class Main(object):
                 self.log(repr(video))
             if key == 'trending' or key == 'anticipated' or key == 'popular':
                 title = video.get('titleText').get('text')
-                imdb = video.get('id')
                 videoId = video.get('latestTrailer').get('id')
                 duration = video.get('latestTrailer').get('runtime').get('value')
                 name = video.get('latestTrailer').get('name').get('value')
@@ -401,10 +397,6 @@ class Main(object):
                     title = video.get('primaryTitle', {}).get('titleText', {}).get('text', '')
                 except AttributeError:
                     title = ''
-                try:
-                    imdb = video.get('primaryTitle', {}).get('id', '')
-                except AttributeError:
-                    imdb = ''
                 videoId = video.get('id')
                 duration = video.get('runtime').get('value')
                 name = video.get('name').get('value')
@@ -440,7 +432,7 @@ class Main(object):
             labels = {'title': title,
                       'plot': plot,
                       'duration': duration,
-                      'imdbnumber': imdb}
+                      'mediatype': 'movie'}
             if year:
                 labels.update({'year': year})
 
@@ -586,14 +578,12 @@ class Main(object):
 
 
 def fetch(url):
-    headers = {'User-Agent': USER_AGENT,
-               'Referer': 'https://www.imdb.com/',
+    headers = {'Referer': 'https://www.imdb.com/',
                'Origin': 'https://www.imdb.com'}
     if 'graphql' in url:
         headers.update({'content-type': 'application/json'})
-    r = requests.get(url, headers=headers)
-    data = r.json() if 'json' in r.headers.get('Content-Type', '').lower() else r.text
-    return data
+    r = client.request(url, headers=headers)
+    return r
 
 
 def fetchdata3(key):

@@ -2,7 +2,6 @@
 <addon id="plugin.video.imdb.trailers" name="IMDb Trailers" version="2.1.16~nightly" provider-name="gujal">
   <requires>
     <!-- <import addon="xbmc.python" version="3.0.0"/> -->
-    <import addon="script.module.requests" version="2.4.3"/>
     <import addon="script.common.plugin.cache" version="2.6.0"/>
     <import addon="script.module.beautifulsoup4" version="4.0.0"/>
     <import addon="script.module.six" version="1.12.0"/>
