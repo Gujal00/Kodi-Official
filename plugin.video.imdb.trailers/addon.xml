@@ -43,6 +43,7 @@
       <screenshot>resources/images/screenshot-01.jpg</screenshot>
       <screenshot>resources/images/screenshot-02.jpg</screenshot>
       <screenshot>resources/images/screenshot-03.jpg</screenshot>
+      <screenshot>resources/images/screenshot-04.jpg</screenshot>
     </assets>
   </extension>
 </addon>
