@@ -1,5 +1,13 @@
 plugin.video.imdb.trailers:
 ---------------------------
+v2.1.16 (20220815)
+[fix] Now Playing
+[fix] Coming soon
+[new] cast images in meta
+
+v2.1.15 (20220522)
+[fix] playback fix
+
 v2.1.14 (20211015)
 [fix] code breaking on Kodi18
 [fix] Search dialog popup after playing a searched trailer
