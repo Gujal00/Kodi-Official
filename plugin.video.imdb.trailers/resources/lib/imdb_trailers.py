@@ -371,7 +371,7 @@ class Main(object):
             imdbIDs = [x.find('div', {'class': 'lister-item-image'}).get('data-tconst') for x in videos]
         else:
             page_data = cache.cacheFunction(fetch, COMING_URL)
-            imdbIDs = re.findall(r'<li>\s*<a\s*href="/title/([^/]+)', page_data, re.DOTALL)
+            imdbIDs = re.findall(r'<a class="ipc-metadata-list-summary-item__t".+?href="/title/([^/]+)', page_data, re.DOTALL)
 
         for imdbId in imdbIDs:
             video = cache.cacheFunction(self.fetchdata_id, imdbId)
@@ -611,14 +611,20 @@ class Main(object):
                 except AttributeError:
                     pass
 
-                cert = v_det.get('certificate')
-                if cert:
-                    labels.update({'mpaa': cert.get('rating')})
+                try:
+                    cert = v_det.get('certificate')
+                    if cert:
+                        labels.update({'mpaa': cert.get('rating')})
+                except AttributeError:
+                    pass
 
-                rating = v_det.get('ratingsSummary')
-                if rating.get('aggregateRating'):
-                    labels.update({'rating': rating.get('aggregateRating'),
-                                   'votes': rating.get('voteCount')})
+                try:
+                    rating = v_det.get('ratingsSummary')
+                    if rating.get('aggregateRating'):
+                        labels.update({'rating': rating.get('aggregateRating'),
+                                       'votes': rating.get('voteCount')})
+                except AttributeError:
+                    pass
 
                 try:
                     fanart = video.get('thumbnail').get('url')
