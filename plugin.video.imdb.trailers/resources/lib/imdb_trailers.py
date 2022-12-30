@@ -48,6 +48,7 @@ _fanart = _addon.getAddonInfo('fanart')
 _language = _addon.getLocalizedString
 _settings = _addon.getSetting
 _addonpath = 'special://profile/addon_data/{}/'.format(_addonID)
+_kodiver = float(xbmcaddon.Addon('xbmc.addon').getAddonInfo('version')[:4])
 # DEBUG
 DEBUG = _settings("DebugMode") == "true"
 # View Mode
@@ -342,7 +343,14 @@ class Main(object):
 
                 listitem.setInfo(type='Video', infoLabels=labels)
                 if cast2:
-                    listitem.setCast(cast2)
+                    if _kodiver < 19.8:
+                        listitem.setCast(cast2)
+                    else:
+                        vtag = listitem.getVideoInfoTag()
+                        cast3 = []
+                        for p in cast2:
+                            cast3.append(xbmc.Actor(p['name'], '', 0, p['thumbnail']))
+                        vtag.setCast(cast3)
 
                 listitem.setProperty('IsPlayable', 'true')
                 url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play',
@@ -456,7 +464,14 @@ class Main(object):
 
                 listitem.setInfo(type='Video', infoLabels=labels)
                 if cast2:
-                    listitem.setCast(cast2)
+                    if _kodiver < 19.8:
+                        listitem.setCast(cast2)
+                    else:
+                        vtag = listitem.getVideoInfoTag()
+                        cast3 = []
+                        for p in cast2:
+                            cast3.append(xbmc.Actor(p['name'], '', 0, p['thumbnail']))
+                        vtag.setCast(cast3)
 
                 listitem.setProperty('IsPlayable', 'true')
                 url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play',
@@ -663,7 +678,14 @@ class Main(object):
 
             listitem.setInfo(type='Video', infoLabels=labels)
             if cast2:
-                listitem.setCast(cast2)
+                if _kodiver < 19.8:
+                    listitem.setCast(cast2)
+                else:
+                    vtag = listitem.getVideoInfoTag()
+                    cast3 = []
+                    for p in cast2:
+                        cast3.append(xbmc.Actor(p['name'], '', 0, p['thumbnail']))
+                    vtag.setCast(cast3)
 
             listitem.setProperty('IsPlayable', 'true')
             url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play',
