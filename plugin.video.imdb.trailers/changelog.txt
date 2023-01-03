@@ -1,5 +1,10 @@
 plugin.video.imdb.trailers:
 ---------------------------
+v2.1.17 (20230103)
+[fix] Coming soon
+[fix] Recently added
+[new] Kodi Nexus compliance
+
 v2.1.16 (20220815)
 [fix] Now Playing
 [fix] Coming soon
