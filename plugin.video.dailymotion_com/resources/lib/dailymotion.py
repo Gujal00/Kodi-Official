@@ -312,7 +312,12 @@ def playVideo(vid, live=False):
     xbmc.log("DAILYMOTION - FinalUrl = {0}".format(url), xbmc.LOGDEBUG)
 
     if url:
+        subs = []
+        if isinstance(url, tuple):
+            url, subs = url
         listitem = xbmcgui.ListItem(path=url)
+        if subs:
+            listitem.setSubtitles(subs)
         if '.m3u8' in url:
             listitem.setMimeType("application/x-mpegURL")
         else:
@@ -343,14 +348,17 @@ def getStreamUrl(vid, live=False):
               'ff': ff}
     r = requests.get("https://www.dailymotion.com/player/metadata/video/{0}".format(vid), headers=headers, cookies=cookie)
     content = r.json()
-    if content.get('error') is not None:
-        Error = (content['error']['title'])
+    if content.get('error'):
+        Error = (content['error']['type'])
         xbmcgui.Dialog().notification('Info:', Error, _icon, 5000, False)
         return
     else:
         cc = content['qualities']
         cc = list(cc.items())
         cc = sorted(cc, key=s, reverse=True)
+        subs = content.get('subtitles', {}).get('data')
+        if subs:
+            subs = [subs[x].get('urls')[0] for x in subs.keys()]
         m_url = ''
         other_playable_url = []
 
@@ -372,7 +380,7 @@ def getStreamUrl(vid, live=False):
                                 if int(quality) <= int(maxVideoQuality):
                                     strurl = '{0}|{1}'.format(strurl.split('#cell')[0], urllib_parse.urlencode(headers))
                                     xbmc.log('Selected URL is: {0}'.format(strurl), xbmc.LOGDEBUG)
-                                    return strurl
+                                    return (strurl, subs) if subs else strurl
 
                         elif int(source) <= int(maxVideoQuality):
                             if 'video' in item.get('type', None):
