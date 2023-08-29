@@ -27,7 +27,7 @@ TRANSLATEPATH = xbmcvfs.translatePath if six.PY3 else xbmc.translatePath
 CERT_FILE = TRANSLATEPATH('special://xbmc/system/certs/cacert.pem')
 
 
-def request(url, headers={}, post=None, timeout='20'):
+def request(url, headers=None, post=None, timeout='20'):
     _headers = {}
     if headers:
         _headers.update(headers)
