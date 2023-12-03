@@ -262,7 +262,7 @@ class Main(object):
         '''
 
         pdata = {'query': self.gqlmin(query), 'variables': variables}
-        data = cache.get(client.request, cache_duration, self.api_url, headers=self.headers, post=pdata)
+        data = client.request(self.api_url, headers=self.headers, post=pdata)
         items = data.get('data').get('mainSearch').get('edges')
         for item in items:
             video = item.get('node').get('entity')
@@ -442,19 +442,15 @@ class Main(object):
             self.litems.append({'labels': labels, 'cast2': cast2, 'art': art, 'videoId': videoId})
         return
 
-    def list_contents1(self):
-        key = self.parameters('key')
-        if DEBUG:
-            self.log('list_contents1({0})'.format(key))
-
+    def get_contents1(self, key):
         if key == 'showing':
-            page_data = cache.get(client.request, cache_duration, SHOWING_URL, headers=self.headers)
+            page_data = client.request(SHOWING_URL, headers=self.headers)
             tlink = SoupStrainer('div', {'class': 'lister-list'})
             mdiv = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
             videos = mdiv.find_all('div', {'class': 'lister-item'})
             imdbIDs = [x.find('div', {'class': 'lister-item-image'}).get('data-tconst') for x in videos]
         else:
-            page_data = cache.get(client.request, cache_duration, COMING_URL, headers=self.headers)
+            page_data = client.request(COMING_URL, headers=self.headers)
             imdbIDs = re.findall(r'<a class="ipc-metadata-list-summary-item__t".+?href="/title/([^/]+)', page_data, re.DOTALL)
 
         self.litems = []
@@ -475,7 +471,15 @@ class Main(object):
             [i.start() for i in threads]
             [i.join() for i in threads]
 
-        for litem in self.litems:
+        return self.litems
+
+    def list_contents1(self):
+        key = self.parameters('key')
+        if DEBUG:
+            self.log('list_contents1({0})'.format(key))
+
+        items = cache.get(self.get_contents1, cache_duration, key)
+        for litem in items:
             listitem = self.make_listitem(litem.get('labels'), litem.get('cast2'))
             listitem.setArt(litem.get('art'))
             listitem.setProperty('IsPlayable', 'true')
@@ -492,12 +496,9 @@ class Main(object):
         # End of directory...
         xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
 
-    def list_contents2(self):
-        key = self.parameters('key')
-        if DEBUG:
-            self.log('content_list3("{0}")'.format(key))
-
+    def get_contents2(self, key):
         videos = self.fetchdata(key)
+        litems = []
         for video in videos:
             if DEBUG:
                 self.log(repr(video))
@@ -674,16 +675,25 @@ class Main(object):
             if 'mpaa' in labels.keys():
                 if 'TV' in labels.get('mpaa'):
                     labels.update({'mediatype': 'tvshow'})
+            art = {'thumb': poster,
+                   'icon': poster,
+                   'poster': poster,
+                   'fanart': fanart}
+            litems.append({'labels': labels, 'cast2': cast2, 'art': art, 'videoId': videoId})
+        return litems
 
-            listitem = self.make_listitem(labels, cast2)
-            listitem.setArt({'thumb': poster,
-                             'icon': poster,
-                             'poster': poster,
-                             'fanart': fanart})
+    def list_contents2(self):
+        key = self.parameters('key')
+        if DEBUG:
+            self.log('content_list3("{0}")'.format(key))
 
+        items = cache.get(self.get_contents2, cache_duration, key)
+        for item in items:
+            listitem = self.make_listitem(item.get('labels'), item.get('cast2'))
+            listitem.setArt(item.get('art'))
             listitem.setProperty('IsPlayable', 'true')
             url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play',
-                                                              'videoid': videoId})
+                                                              'videoid': item.get('videoId')})
             xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
 
         # Sort methods and content type...
@@ -905,7 +915,7 @@ class Main(object):
         '''
 
         pdata = {'query': self.gqlmin(query), 'variables': variables}
-        data = cache.get(client.request, cache_duration, self.api_url, headers=self.headers, post=pdata)
+        data = client.request(self.api_url, headers=self.headers, post=pdata)
         return data
 
     def fetchdata(self, key):
@@ -1165,7 +1175,7 @@ class Main(object):
                 'query': self.gqlmin(query_pt1 + query_pt2),
                 'variables': vpar
             }
-            data = cache.get(client.request, cache_duration, self.api_url, headers=self.headers, post=pdata)
+            data = client.request(self.api_url, headers=self.headers, post=pdata)
             pages += 1
             data = data.get('data')
 

@@ -14,13 +14,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import pickle
 import hashlib
-import re
-import time
 import json
+import pickle
+import re
 import six
-from kodi_six import xbmc, xbmcvfs
+import time
+import zlib
+from kodi_six import xbmc, xbmcvfs, xbmcaddon
 try:
     from sqlite3 import dbapi2 as db, OperationalError, Binary
 except ImportError:
@@ -28,7 +29,7 @@ except ImportError:
 
 
 TRANSLATEPATH = xbmcvfs.translatePath if six.PY3 else xbmc.translatePath
-cacheFile = TRANSLATEPATH('special://profile/addon_data/plugin.video.imdb.trailers/cache.db')
+cacheFile = TRANSLATEPATH(xbmcaddon.Addon().getAddonInfo('profile') + '/cache.db')
 cache_table = 'cache'
 
 
@@ -47,7 +48,7 @@ def get(function, duration, *args, **kwargs):
 
     if cache_result:
         if _is_cache_valid(cache_result['date'], duration):
-            return pickle.loads(cache_result['value'])
+            return pickle.loads(zlib.decompress(cache_result['value']))
 
     fresh_result = function(*args, **kwargs)
 
@@ -55,10 +56,10 @@ def get(function, duration, *args, **kwargs):
         # If the cache is old, but we didn't get fresh result, return the
         # old cache
         if cache_result:
-            return cache_result
+            return pickle.loads(zlib.decompress(cache_result['value']))
         return None
 
-    cache_insert(key, Binary(pickle.dumps(fresh_result)))
+    cache_insert(key, Binary(zlib.compress(pickle.dumps(fresh_result))))
     return fresh_result
 
 
