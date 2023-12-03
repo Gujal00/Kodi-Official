@@ -14,7 +14,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import ast
+import pickle
 import hashlib
 import re
 import time
@@ -22,9 +22,9 @@ import json
 import six
 from kodi_six import xbmc, xbmcvfs
 try:
-    from sqlite3 import dbapi2 as db, OperationalError
+    from sqlite3 import dbapi2 as db, OperationalError, Binary
 except ImportError:
-    from pysqlite2 import dbapi2 as db, OperationalError
+    from pysqlite2 import dbapi2 as db, OperationalError, Binary
 
 
 TRANSLATEPATH = xbmcvfs.translatePath if six.PY3 else xbmc.translatePath
@@ -47,7 +47,7 @@ def get(function, duration, *args, **kwargs):
 
     if cache_result:
         if _is_cache_valid(cache_result['date'], duration):
-            return ast.literal_eval(cache_result['value'].encode('utf-8') if six.PY2 else cache_result['value'])
+            return pickle.loads(cache_result['value'])
 
     fresh_result = function(*args, **kwargs)
 
@@ -58,8 +58,8 @@ def get(function, duration, *args, **kwargs):
             return cache_result
         return None
 
-    cache_insert(key, repr(fresh_result))
-    return ast.literal_eval(repr(fresh_result).encode('utf-8') if six.PY2 else repr(fresh_result))
+    cache_insert(key, Binary(pickle.dumps(fresh_result)))
+    return fresh_result
 
 
 def remove(function, *args, **kwargs):
@@ -90,7 +90,7 @@ def cache_insert(key, value):
     cursor = _get_connection_cursor()
     now = int(time.time())
     cursor.execute(
-        "CREATE TABLE IF NOT EXISTS %s (key TEXT, value TEXT, date INTEGER, UNIQUE(key))" %
+        "CREATE TABLE IF NOT EXISTS %s (key TEXT, value BINARY, date INTEGER, UNIQUE(key))" %
         cache_table)
     cursor.execute(
         "CREATE UNIQUE INDEX if not exists index_key ON %s (key)" % cache_table)
