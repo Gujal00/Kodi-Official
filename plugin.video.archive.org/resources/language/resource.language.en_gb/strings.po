@@ -17,7 +17,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
 msgctxt "Addon Summary"
-msgid "Internet Archive video add-on"
+msgid "Internet Archive add-on"
 msgstr ""
 
 msgctxt "Addon Description"

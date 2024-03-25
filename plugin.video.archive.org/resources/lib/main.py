@@ -60,8 +60,8 @@ class Main(object):
         self.headers = {'Referer': self.base_url}
         self.litems = []
         action = self.parameters('action')
-        if action == 'list_videos':
-            self.list_videos()
+        if action == 'list_items':
+            self.list_items()
         elif action == 'list_collections':
             self.list_collections()
         elif action == 'play':
@@ -78,6 +78,7 @@ class Main(object):
     def main_menu(self):
         if DEBUG:
             self.log('main_menu()')
+        target = self.parameters('content_type')
         category = [{'title': _language(30101), 'key': 'popular'},
                     {'title': _language(30102), 'key': 'search'},
                     {'title': _language(30002), 'key': 'cache'}]
@@ -90,9 +91,9 @@ class Main(object):
             if i['key'] == 'cache':
                 url = sys.argv[0] + '?action=clear'
             elif i['key'] == 'search':
-                url = sys.argv[0] + '?action=search'
+                url = '{}?action=search&content_type={}'.format(sys.argv[0], target)
             else:
-                url = sys.argv[0] + '?action=list_collections&page=1'
+                url = '{}?action=list_collections&page=1&content_type={}'.format(sys.argv[0], target)
 
             xbmcplugin.addDirectoryItems(int(sys.argv[1]), [(url, listitem, True)])
 
@@ -111,14 +112,14 @@ class Main(object):
         cache.cache_clear()
         xbmcgui.Dialog().notification(_plugin, _language(30201), _icon, 3000, False)
 
-    def get_search_items(self, target, page):
+    def get_search_items(self, filter_map, target, page):
         cd = {}
         params = {
             'service_backend': 'metadata',
             'user_query': target,
             'hits_per_page': 100,
             'page': page,
-            'filter_map': '{"mediatype":{"movies":"inc","collection":"exc","data":"exc","audio":"exc","texts":"exc","image":"exc","software":"exc"}}',
+            'filter_map': filter_map,
             'aggregations': 'false',
             'client_url': 'https://archive.org/'
         }
@@ -145,11 +146,13 @@ class Main(object):
 
     def list_collections(self):
         page = int(self.parameters('page'))
+        content_type = self.parameters('content_type')
+        target = 'movies' if content_type == 'video' else 'audio'
         if DEBUG:
             self.log('list_collections({0})'.format(page))
 
         filter_map = '{"mediatype":{"collection":"inc"}}'
-        data = cache.get(self.get_items, cache_duration, filter_map, 'movies', page)
+        data = cache.get(self.get_items, cache_duration, filter_map, target, page)
         if data:
             items = data.get('hits')
             for item in items:
@@ -162,9 +165,9 @@ class Main(object):
                 count = item.get('item_count')
                 labels = {
                     'title': '{0} [COLOR lime]{1:,} items[/COLOR]'.format(title, count),
-                    'plot': plot
+                    'plot' if content_type == 'video' else 'comment': plot
                 }
-                listitem = self.make_listitem(labels)
+                listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': self.img_path + slug,
                     'thumbnail': self.img_path + slug,
@@ -172,9 +175,10 @@ class Main(object):
                 })
                 listitem.setProperty('IsPlayable', 'false')
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
-                    'action': 'list_videos',
+                    'action': 'list_items',
                     'page': 1,
-                    'target': slug
+                    'target': slug,
+                    'content_type': content_type
                 })
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, True)
 
@@ -182,7 +186,8 @@ class Main(object):
             if page * 100 < total:
                 lastpg = -1 * (-total // 100)
                 page += 1
-                listitem = self.make_listitem({'title': '[COLOR lime]{}...[/COLOR] ({}/{})'.format(_language(30204), page, lastpg)})
+                labels = {'title': '[COLOR lime]{}...[/COLOR] ({}/{})'.format(_language(30204), page, lastpg)}
+                listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': _icon,
                     'thumbnail': _icon,
@@ -192,23 +197,25 @@ class Main(object):
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
                     'action': 'list_collections',
                     'page': page,
+                    'content_type': content_type
                 })
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, True)
 
             # Sort methods and content type...
-            xbmcplugin.setContent(int(sys.argv[1]), 'videos')
+            xbmcplugin.setContent(int(sys.argv[1]), 'videos' if content_type == 'video' else 'albums')
             xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
             xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
             # End of directory...
             xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
 
-    def list_videos(self):
+    def list_items(self):
         page = int(self.parameters('page'))
         target = self.parameters('target')
+        content_type = self.parameters('content_type')
         if DEBUG:
             self.log('list_videos("{0}")'.format(target))
 
-        filter_map = '{"mediatype":{"movies":"inc","collection":"exc","data":"exc","audio":"exc","texts":"exc","image":"exc","software":"exc"}}'
+        filter_map = '{{"mediatype":{{"{}":"inc","etree":"inc"}}}}'.format('movies' if content_type == 'video' else 'audio')
         data = cache.get(self.get_items, cache_duration, filter_map, target, page)
         if data:
             items = data.get('hits')
@@ -221,9 +228,9 @@ class Main(object):
                 slug = item.get('identifier')
                 labels = {
                     'title': title,
-                    'plot': plot
+                    'plot' if content_type == 'video' else 'comment': plot
                 }
-                listitem = self.make_listitem(labels)
+                listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': self.img_path + slug,
                     'thumbnail': self.img_path + slug,
@@ -233,7 +240,8 @@ class Main(object):
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
                     'action': 'play',
                     'page': 1,
-                    'video': slug
+                    'target': slug,
+                    'content_type': content_type
                 })
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
 
@@ -241,7 +249,8 @@ class Main(object):
             if page * 100 < total:
                 lastpg = -1 * (-total // 100)
                 page += 1
-                listitem = self.make_listitem({'title': '[COLOR lime]{}...[/COLOR] ({}/{})'.format(_language(30204), page, lastpg)})
+                labels = {'title': '[COLOR lime]{}...[/COLOR] ({}/{})'.format(_language(30204), page, lastpg)}
+                listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': _icon,
                     'thumbnail': _icon,
@@ -249,14 +258,15 @@ class Main(object):
                 })
                 listitem.setProperty('IsPlayable', 'false')
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
-                    'action': 'list_videos',
+                    'action': 'list_items',
                     'page': page,
-                    'target': target
+                    'target': target,
+                    'content_type': content_type
                 })
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, True)
 
             # Sort methods and content type...
-            xbmcplugin.setContent(int(sys.argv[1]), 'videos')
+            xbmcplugin.setContent(int(sys.argv[1]), 'videos' if content_type == 'video' else 'songs')
             xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
             xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
             # End of directory...
@@ -271,6 +281,7 @@ class Main(object):
         return '{0:.2f} {1}'.format(size, slabels[n])
 
     def search(self):
+        content_type = self.parameters('content_type')
         if DEBUG:
             self.log('search()')
         keyboard = xbmc.Keyboard()
@@ -284,6 +295,7 @@ class Main(object):
         if len(search_text) > 2:
             url = sys.argv[0] + '?' + urllib.parse.urlencode({'action': 'search_word',
                                                               'keyword': search_text,
+                                                              'content_type': content_type,
                                                               'page': 1})
             xbmc.executebuiltin("Container.Update({0},replace)".format(url))
         else:
@@ -292,10 +304,12 @@ class Main(object):
 
     def search_word(self):
         search_text = urllib.parse.unquote(self.parameters('keyword'))
+        content_type = self.parameters('content_type')
         page = int(self.parameters('page'))
         if DEBUG:
             self.log('search_word("{0}")'.format(search_text))
-        data = cache.get(self.get_search_items, cache_duration, search_text, page)
+        filter_map = '{{"mediatype":{{"{}":"inc","etree":"inc"}}}}'.format('movies' if content_type == 'video' else 'audio')
+        data = cache.get(self.get_search_items, cache_duration, filter_map, search_text, page)
         if data:
             items = data.get('hits')
             for item in items:
@@ -307,9 +321,9 @@ class Main(object):
                 slug = item.get('identifier')
                 labels = {
                     'title': title,
-                    'plot': plot
+                    'plot' if content_type == 'video' else 'comment': plot
                 }
-                listitem = self.make_listitem(labels)
+                listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': self.img_path + slug,
                     'thumbnail': self.img_path + slug,
@@ -319,7 +333,7 @@ class Main(object):
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
                     'action': 'play',
                     'page': 1,
-                    'video': slug
+                    'target': slug
                 })
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
 
@@ -327,7 +341,8 @@ class Main(object):
             if page * 100 < total:
                 lastpg = -1 * (-total // 100)
                 page += 1
-                listitem = self.make_listitem({'title': '[COLOR lime]{}...[/COLOR] ({}/{})'.format(_language(30204), page, lastpg)})
+                labels = {'title': '[COLOR lime]{}...[/COLOR] ({}/{})'.format(_language(30204), page, lastpg)}
+                listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': _icon,
                     'thumbnail': _icon,
@@ -337,22 +352,24 @@ class Main(object):
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
                     'action': 'search_word',
                     'keyword': search_text,
+                    'content_type': content_type,
                     'page': page
                 })
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, True)
 
             # Sort methods and content type...
-            xbmcplugin.setContent(int(sys.argv[1]), 'videos')
+            xbmcplugin.setContent(int(sys.argv[1]), 'videos' if content_type == 'video' else 'songs')
             xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
             xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
             # End of directory...
             xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
 
     def play(self):
-        video_id = self.parameters('video')
-        url = self.item_path + video_id
+        content_type = self.parameters('content_type')
+        item_id = self.parameters('target')
+        url = self.item_path + item_id
         if DEBUG:
-            self.log('play("{}")'.format(video_id))
+            self.log('play("{}")'.format(item_id))
 
         html = client.request(url, headers=self.headers)
         jsob = re.search('''class="js-play8-playlist".+?value='([^']+)''', html)
@@ -365,7 +382,7 @@ class Main(object):
                 if ret == -1:
                     return
                 surl = self.base_url + sources[ret][1]
-                video_id = sources[ret][0]
+                item_id = sources[ret][0]
             elif total == 1:
                 jd = client.request(url.replace('/details/', '/metadata/'))
                 sources = [i for i in jd.get('files') if 'height' in i.keys() and '.jpg' not in i.get('name')]
@@ -388,7 +405,7 @@ class Main(object):
                     urllib.parse.quote(sources[ret].get('name'))
                 )
 
-            li = self.make_listitem({'title': video_id})
+            li = self.make_listitem({'title': item_id}, content_type)
             li.setPath(surl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=li)
 
@@ -399,21 +416,24 @@ class Main(object):
             val = val[0]
         return val
 
-    def make_listitem(self, labels):
+    def make_listitem(self, labels, content_type):
         li = xbmcgui.ListItem(labels.get('title'))
         if _kodiver > 19.8:
-            vtag = li.getVideoInfoTag()
+            vtag = li.getVideoInfoTag() if content_type == 'video' else li.getMusicInfoTag()
             vtag.setTitle(labels.get('title'))
-            vtag.setOriginalTitle(labels.get('title'))
+            if content_type == 'video':
+                vtag.setOriginalTitle(labels.get('title'))
             if labels.get('plot'):
                 vtag.setPlot(labels.get('plot'))
                 vtag.setPlotOutline(labels.get('plot'))
+            if labels.get('comment'):
+                vtag.setComment(labels.get('comment'))
             if labels.get('mediatype'):
                 vtag.setMediaType(labels.get('mediatype'))
             if labels.get('duration'):
                 vtag.setDuration(labels.get('duration'))
         else:
-            li.setInfo(type='Video', infoLabels=labels)
+            li.setInfo(type='video' if content_type == 'video' else 'music', infoLabels=labels)
 
         return li
 
