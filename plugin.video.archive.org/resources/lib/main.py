@@ -170,7 +170,7 @@ class Main(object):
                 listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': self.img_path + slug,
-                    'thumbnail': self.img_path + slug,
+                    'thumb': self.img_path + slug,
                     'fanart': _fanart
                 })
                 listitem.setProperty('IsPlayable', 'false')
@@ -190,7 +190,7 @@ class Main(object):
                 listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': _icon,
-                    'thumbnail': _icon,
+                    'thumb': _icon,
                     'fanart': _fanart
                 })
                 listitem.setProperty('IsPlayable', 'false')
@@ -233,13 +233,12 @@ class Main(object):
                 listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': self.img_path + slug,
-                    'thumbnail': self.img_path + slug,
+                    'thumb': self.img_path + slug,
                     'fanart': _fanart
                 })
                 listitem.setProperty('IsPlayable', 'true')
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
                     'action': 'play',
-                    'page': 1,
                     'target': slug,
                     'content_type': content_type
                 })
@@ -253,7 +252,7 @@ class Main(object):
                 listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': _icon,
-                    'thumbnail': _icon,
+                    'thumb': _icon,
                     'fanart': _fanart
                 })
                 listitem.setProperty('IsPlayable', 'false')
@@ -326,14 +325,14 @@ class Main(object):
                 listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': self.img_path + slug,
-                    'thumbnail': self.img_path + slug,
+                    'thumb': self.img_path + slug,
                     'fanart': _fanart
                 })
                 listitem.setProperty('IsPlayable', 'true')
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
                     'action': 'play',
-                    'page': 1,
-                    'target': slug
+                    'target': slug,
+                    'content_type': content_type
                 })
                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
 
@@ -345,7 +344,7 @@ class Main(object):
                 listitem = self.make_listitem(labels, content_type)
                 listitem.setArt({
                     'icon': _icon,
-                    'thumbnail': _icon,
+                    'thumb': _icon,
                     'fanart': _fanart
                 })
                 listitem.setProperty('IsPlayable', 'false')
@@ -406,6 +405,7 @@ class Main(object):
                 )
 
             li = self.make_listitem({'title': item_id}, content_type)
+            li.setArt({'fanart': _fanart})
             li.setPath(surl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=li)
 
