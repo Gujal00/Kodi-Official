@@ -372,8 +372,8 @@ def getStreamUrl(vid, live=False):
                         if source == "auto":
                             mbtext = requests.get(m_url, headers=headers).text
                             mb = re.findall('NAME="([^"]+)",PROGRESSIVE-URI="([^"]+)"', mbtext)
-                            if checkUrl(mb[-1][1].split('#cell')[0]) is False:
-                                mb = re.findall(r'NAME="([^"]+)".+\n([^\n]+)', mbtext)
+                            if not mb or checkUrl(mb[-1][1].split('#cell')[0]) is False:
+                                mb = re.findall(r'NAME="([^"]+)".*\n([^\n]+)', mbtext)
                             mb = sorted(mb, key=s, reverse=True)
                             for quality, strurl in mb:
                                 quality = quality.split("@")[0]
