@@ -376,16 +376,12 @@ def s(elem):
 
 
 def getStreamUrl(vid, live=False):
-    if familyFilter == "1":
-        ff = "on"
-    else:
-        ff = "off"
     xbmc.log('DAILYMOTION - url is {0}'.format(url), xbmc.LOGDEBUG)
     headers = {'User-Agent': _UA,
                'Origin': 'https://www.dailymotion.com',
                'Referer': 'https://www.dailymotion.com/'}
     cookie = {'lang': language,
-              'ff': ff}
+              'ff': "on" if familyFilter == "1" else "off"}
     r = requests.get("https://www.dailymotion.com/player/metadata/video/{0}".format(vid), headers=headers, cookies=cookie)
     content = r.json()
     if content.get('error'):
@@ -602,29 +598,21 @@ def translation(lid):
 
 
 def getUrl2(url):
-    if familyFilter == "1":
-        ff = "on"
-    else:
-        ff = "off"
     xbmc.log('DAILYMOTION - The url is {0}'.format(url), xbmc.LOGDEBUG)
     headers = {'User-Agent': _UA}
     cookie = {'lang': language,
-              'ff': ff}
+              'ff': "on" if familyFilter == "1" else "off"}
     r = requests.get(url, headers=headers, cookies=cookie)
     return r.text
 
 
 def checkUrl(url):
-    if familyFilter == "1":
-        ff = "on"
-    else:
-        ff = "off"
     xbmc.log('DAILYMOTION - Check url is {0}'.format(url), xbmc.LOGDEBUG)
     headers = {'User-Agent': _UA,
                'Referer': 'https://www.dailymotion.com/',
                'Origin': 'https://www.dailymotion.com'}
     cookie = {'lang': language,
-              'ff': ff}
+              'ff': "on" if familyFilter == "1" else "off"}
     r = requests.head(url, headers=headers, cookies=cookie)
     status = r.status_code == 200
     return status
