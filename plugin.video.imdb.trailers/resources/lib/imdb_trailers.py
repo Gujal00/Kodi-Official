@@ -707,7 +707,7 @@ class Main(object):
 
     def fetch_video_url(self, video_id):
         if DEBUG:
-            self.log('fetch_video_url("{0})'.format(video_id))
+            self.log('fetch_video_url("{0}")'.format(video_id))
         vidurl = DETAILS_PAGE.format(video_id)
         pagedata = client.request(vidurl, headers=self.headers)
         r = re.search(r'application/json">([^<]+)', pagedata)
@@ -748,9 +748,14 @@ class Main(object):
     def play_id(self):
         imdb_id = self.parameters('imdb')
         if DEBUG:
-            self.log('play_id("{0})'.format(imdb_id))
+            self.log('play_id("{0}")'.format(imdb_id))
 
         video = self.fetchdata_id(imdb_id)
+        if 'errors' in video.keys():
+            msg = 'Invalid IMDb ID'
+            xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
+            return
+
         video = video.get('data').get('title')
         if video.get('latestTrailer'):
             videoid = video.get('latestTrailer').get('id')
