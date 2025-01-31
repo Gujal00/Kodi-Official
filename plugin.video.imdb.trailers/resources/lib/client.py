@@ -42,7 +42,7 @@ def request(url, headers=None, post=None, timeout='20'):
     if 'User-Agent' in _headers:
         pass
     else:
-        _headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
+        _headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0'
 
     if 'Accept-Language' not in _headers:
         _headers['Accept-Language'] = 'en-US,en'
@@ -92,8 +92,8 @@ def request(url, headers=None, post=None, timeout='20'):
 
     if encoding is not None:
         result = result.decode(encoding, errors='ignore')
-    elif 'json' in content_type:
-        result = json.loads(result.decode('utf-8'))
+    if 'json' in content_type:
+        result = json.loads(result if isinstance(result, str) else result.decode('utf-8'))
     else:
         xbmc.log('Unknown Page Encoding', xbmc.LOGDEBUG)
 
