@@ -384,11 +384,17 @@ class Main(object):
                 pass
 
             try:
-                cast = [x.get('node').get('name').get('nameText').get('text') for x in video.get('cast').get('edges')]
+                cast = [
+                    (x.get('node').get('name').get('nameText').get('text'),
+                        x.get('node').get('characters')[0].get('name')
+                        if x.get('node').get('characters') else '')
+                    for x in video.get('cast').get('edges')
+                ]
                 labels.update({'cast': cast})
                 cast2 = [
                     {'name': x.get('node').get('name').get('nameText').get('text'),
-                        'thumbnail': x.get('node').get('name').get('primaryImage').get('url')
+                     'role': x.get('node').get('characters')[0].get('name') if x.get('node').get('characters') else '',
+                     'thumbnail': x.get('node').get('name').get('primaryImage').get('url')
                         if x.get('node').get('name').get('primaryImage') else ''}
                     for x in video.get('cast').get('edges')
                 ]
@@ -538,10 +544,16 @@ class Main(object):
                     pass
 
                 try:
-                    cast = [x.get('node').get('name').get('nameText').get('text') for x in video.get('cast').get('edges')]
+                    cast = [
+                        (x.get('node').get('name').get('nameText').get('text'),
+                         x.get('node').get('characters')[0].get('name')
+                            if x.get('node').get('characters') else '')
+                        for x in video.get('cast').get('edges')
+                    ]
                     labels.update({'cast': cast})
                     cast2 = [
                         {'name': x.get('node').get('name').get('nameText').get('text'),
+                         'role': x.get('node').get('characters')[0].get('name') if x.get('node').get('characters') else '',
                          'thumbnail': x.get('node').get('name').get('primaryImage').get('url')
                             if x.get('node').get('name').get('primaryImage') else ''}
                         for x in video.get('cast').get('edges')
@@ -685,7 +697,7 @@ class Main(object):
     def list_contents2(self):
         key = self.parameters('key')
         if DEBUG:
-            self.log('content_list3("{0}")'.format(key))
+            self.log('list_contents2("{0}")'.format(key))
 
         items = cache.get(self.get_contents2, cache_duration, key)
         for item in items:
@@ -821,7 +833,7 @@ class Main(object):
             vtag.setWriters(labels.get('writer', []))
 
             if cast2:
-                cast2 = [xbmc.Actor(p['name'], '', 0, p['thumbnail']) for p in cast2]
+                cast2 = [xbmc.Actor(p['name'], p['role'], 0, p['thumbnail']) for p in cast2]
                 vtag.setCast(cast2)
 
         else:
@@ -892,15 +904,23 @@ class Main(object):
                         }
                     }
                 }
-                cast: credits(first: 10, filter: { categories: ["actor", "actress"] }) {
+                cast: credits(
+                    first: 10,
+                    filter: { categories: ["actor", "actress"] }
+                ) {
                     edges {
                         node {
-                            name {
-                                nameText {
-                                    text
+                            ... on Cast {
+                                name {
+                                    nameText {
+                                        text
+                                    }
+                                    primaryImage {
+                                        url
+                                    }
                                 }
-                                primaryImage {
-                                    url
+                                characters {
+                                    name
                                 }
                             }
                         }
@@ -1140,12 +1160,17 @@ class Main(object):
                 ) {
                     edges {
                         node {
-                            name {
-                                nameText {
-                                    text
+                            ... on Cast {
+                                name {
+                                    nameText {
+                                        text
+                                    }
+                                    primaryImage {
+                                        url
+                                    }
                                 }
-                                primaryImage {
-                                    url
+                                characters {
+                                    name
                                 }
                             }
                         }
