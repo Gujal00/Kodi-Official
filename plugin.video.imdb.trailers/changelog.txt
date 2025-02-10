@@ -1,5 +1,17 @@
 plugin.video.imdb.trailers:
 ---------------------------
+v2.1.20 (20250209)
+[fix] listing
+[new] charcater names in meta
+[update] improve caching
+
+v2.1.19 (20231121)
+[fix] playback
+
+v2.1.18 (20230825)
+[fix] Popular
+[new] Threading
+
 v2.1.17 (20230103)
 [fix] Coming soon
 [fix] Recently added
