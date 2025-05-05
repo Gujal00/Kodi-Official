@@ -833,7 +833,7 @@ class Main(object):
             vtag.setWriters(labels.get('writer', []))
 
             if cast2:
-                cast2 = [xbmc.Actor(p['name'], p['role'], 0, p['thumbnail']) for p in cast2]
+                cast2 = [xbmc.Actor(p.get('name'), p.get('role'), 0, p.get('thumbnail')) for p in cast2]
                 vtag.setCast(cast2)
 
         else:
