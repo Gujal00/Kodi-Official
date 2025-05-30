@@ -1,0 +1,216 @@
+# Addon Name: Apple Trailers Swedish language
+# Addon id: plugin.video.apple_trailers
+# Addon Provider: TV Addons
+msgid ""
+msgstr ""
+"Project-Id-Version: TV Addons Addons\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2025-05-30 09:06+0200\n"
+"Last-Translator: Daniel Nylander <github@danielnylander.se>\n"
+"Language-Team: sv\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.6\n"
+
+msgctxt "#30000"
+msgid "Apple Trailers"
+msgstr "Apple Trailers"
+
+msgctxt "#30001"
+msgid "Add to Trakt.tv"
+msgstr "Lägg till på Trakt.tv"
+
+msgctxt "#30002"
+msgid "Downloading: %s..."
+msgstr "Hämtar ner: %s..."
+
+msgctxt "#30003"
+msgid "Failed to create directory"
+msgstr "Det gick inte att skapa katalog"
+
+msgctxt "#30004"
+msgid "Failed to write file"
+msgstr "Misslyckades med att skriva fil"
+
+msgctxt "#30005"
+msgid "Download Complete: %s"
+msgstr "Hämtning färdig: %s"
+
+msgctxt "#30006"
+msgid "Error (%s) during download: %s"
+msgstr "Fel (%s) under hämtning: %s"
+
+msgctxt "#30007"
+msgid "No Trailer Download Path is set"
+msgstr "Ingen hämtningssökväg för trailer är inställd"
+
+msgctxt "#30008"
+msgid "Cancel"
+msgstr "Avbryt"
+
+msgctxt "#30009"
+msgid "Set It Now"
+msgstr "Ställ in det nu"
+
+msgctxt "#30010"
+msgid "On ANY device, visit: %s"
+msgstr "På ALLA enheter, besök: %s"
+
+msgctxt "#30011"
+msgid "When prompted, enter code: %s"
+msgstr "Ange koden när du uppmanas att göra det: %s"
+
+msgctxt "#30012"
+msgid "Code expires in: %s seconds"
+msgstr "Koden upphör att gälla om: %s sekunder"
+
+msgctxt "#30013"
+msgid "Trakt Account Authorisation"
+msgstr "Trakt-kontoauktorisering"
+
+msgctxt "#30014"
+msgid "Authorisation was Rejected"
+msgstr "Auktorisering nekades"
+
+msgctxt "#30015"
+msgid "Trakt Authorisation Complete"
+msgstr "Trakt-auktorisering klar"
+
+msgctxt "#30016"
+msgid "Pick a list"
+msgstr "Välj en lista"
+
+msgctxt "#30017"
+msgid "No Lists exist for user: %s"
+msgstr "Inga listor finns för användaren: %s"
+
+msgctxt "#30018"
+msgid "No Matching Movie Found"
+msgstr "Ingen matchande film hittades"
+
+msgctxt "#30019"
+msgid "Pick a Movie"
+msgstr "Välj en film"
+
+msgctxt "#30020"
+msgid "%s added to %s"
+msgstr "%s lades till i %s"
+
+msgctxt "#30021"
+msgid "Downloaded"
+msgstr "Hämtade"
+
+msgctxt "#30022"
+msgid "Play Most Recent Trailer"
+msgstr "Spela senaste trailern"
+
+msgctxt "#30023"
+msgid "No Trailers Available"
+msgstr "Inga trailers tillgängliga"
+
+msgctxt "#30024"
+msgid "Download Trailer"
+msgstr "Hämta ner trailer"
+
+msgctxt "#30500"
+msgid "Trailer Source"
+msgstr "Trailerkälla"
+
+msgctxt "#30501"
+msgid "All"
+msgstr "Alla"
+
+msgctxt "#30502"
+msgid "Exclusive"
+msgstr "Exklusivt"
+
+msgctxt "#30503"
+msgid "Most Popular"
+msgstr "Mest populära"
+
+msgctxt "#30504"
+msgid "Most Recent"
+msgstr "Senaste"
+
+msgctxt "#30505"
+msgid "Movies Limit (0 = No Limit)"
+msgstr "Gräns för filmer (0 = ingen gräns)"
+
+msgctxt "#30506"
+msgid "Max Stream Quality"
+msgstr "Max strömningskvalitet"
+
+msgctxt "#30507"
+msgid "Max Download Quality"
+msgstr "Max hämtningskvalitet"
+
+msgctxt "#30508"
+msgid "Trailer Download Path"
+msgstr "Hämtningssökväg för trailer"
+
+msgctxt "#30509"
+msgid "Show Download Progress"
+msgstr "Visa hämtningsförlopp"
+
+msgctxt "#30510"
+msgid "Off"
+msgstr "Av"
+
+msgctxt "#30511"
+msgid "Window"
+msgstr "Fönster"
+
+msgctxt "#30512"
+msgid "Background"
+msgstr "Bakgrund"
+
+msgctxt "#30513"
+msgid "Trailers View ID"
+msgstr "Visnings-id för trailers"
+
+msgctxt "#30514"
+msgid "Movies Cache Duration"
+msgstr "Cachevaraktighet för filmer"
+
+msgctxt "#30515"
+msgid "24 Hours"
+msgstr "24 timmar"
+
+msgctxt "#30516"
+msgid "12 Hours"
+msgstr "12 timmar"
+
+msgctxt "#30517"
+msgid "8 Hours"
+msgstr "8 timmar"
+
+msgctxt "#30518"
+msgid "How do I authorise this addon to access my trakt.tv account?"
+msgstr "Hur godkänner jag att detta tillägg får åtkomst till mitt trakt.tv-konto?"
+
+msgctxt "#30519"
+msgid "Authorised Trakt User"
+msgstr "Auktoriserad Trakt-användare"
+
+msgctxt "#30520"
+msgid "Use HTTPS for Trakt"
+msgstr "Använd HTTPS för Trakt"
+
+msgctxt "#30521"
+msgid "Trakt Timeout (seconds) (0=No Limit)"
+msgstr "Tidsgräns för Trakt (sekunder) (0=Ingen gräns)"
+
+msgctxt "#30522"
+msgid "Default Trakt List"
+msgstr "Standardlista för Trakt"
+
+msgctxt "#30523"
+msgid "Trailers"
+msgstr "Trailers"
+
+msgctxt "#30524"
+msgid "Download"
+msgstr "Hämta ner"
