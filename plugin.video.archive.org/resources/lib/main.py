@@ -369,7 +369,8 @@ class Main(object):
             self.log('play("{}") {}'.format(item_id, content_type))
 
         html = client.request(url, headers=self.headers)
-        jsob = re.search('''class="js-play8-playlist".+?value='([^']+)''', html)
+        # jsob = re.search('''class="js-play8-playlist".+?value='([^']+)''', html)
+        jsob = re.search('''<play-av.+?playlist='([^']+)''', html)
         if jsob:
             surl = ''
             data = json.loads(jsob.group(1))
@@ -380,7 +381,7 @@ class Main(object):
                     ret = xbmcgui.Dialog().select(_language(30203), [source[0] for source in sources])
                     if ret == -1:
                         return
-                    surl = self.base_url + sources[ret][1]
+                    surl = urllib.parse.urljoin(self.base_url, sources[ret][1])
                     item_id = sources[ret][0]
                 else:
                     if DEBUG:
@@ -418,6 +419,8 @@ class Main(object):
                 li = self.make_listitem({'title': item_id}, content_type)
                 li.setArt({'fanart': _fanart})
                 li.setPath(surl)
+                if DEBUG:
+                    self.log('playing("{}") {}'.format(surl, content_type))
                 xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=li)
 
     def parameters(self, arg):
