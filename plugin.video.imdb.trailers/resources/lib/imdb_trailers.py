@@ -485,22 +485,25 @@ class Main(object):
             self.log('list_contents1({0})'.format(key))
 
         items = cache.get(self.get_contents1, cache_duration, key)
-        for litem in items:
-            listitem = self.make_listitem(litem.get('labels'), litem.get('cast2'))
-            listitem.setArt(litem.get('art'))
-            listitem.setProperty('IsPlayable', 'true')
-            url = sys.argv[0] + '?' + urllib_parse.urlencode({'action': 'play',
-                                                              'videoid': litem.get('videoId')})
-            xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
+        if items:
+            for litem in items:
+                listitem = self.make_listitem(litem.get('labels'), litem.get('cast2'))
+                listitem.setArt(litem.get('art'))
+                listitem.setProperty('IsPlayable', 'true')
+                url = sys.argv[0] + '?' + urllib_parse.urlencode({
+                    'action': 'play',
+                    'videoid': litem.get('videoId')
+                })
+                xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
 
-        # Sort methods and content type...
-        xbmcplugin.setContent(int(sys.argv[1]), 'movies')
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
-        if force_mode:
-            xbmc.executebuiltin('Container.SetViewMode({})'.format(view_mode))
-        # End of directory...
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
+            # Sort methods and content type...
+            xbmcplugin.setContent(int(sys.argv[1]), 'movies')
+            xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
+            xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+            if force_mode:
+                xbmc.executebuiltin('Container.SetViewMode({})'.format(view_mode))
+            # End of directory...
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
 
     def get_contents2(self, key):
         videos = self.fetchdata(key)
