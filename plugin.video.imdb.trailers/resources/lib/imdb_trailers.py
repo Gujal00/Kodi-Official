@@ -57,7 +57,7 @@ if force_mode:
 if not xbmcvfs.exists(_addonpath):
     xbmcvfs.mkdir(_addonpath)
 
-SHOWING_URL = 'https://www.imdb.com/showtimes/_ajax/location/'
+SHOWING_URL = 'https://www.imdb.com/showtimes/'
 COMING_URL = 'https://www.imdb.com/calendar/?type=MOVIE'
 DETAILS_PAGE = "https://www.imdb.com/video/{0}/"
 quality = int(_settings("video_quality")[:-1])
@@ -451,10 +451,10 @@ class Main(object):
     def get_contents1(self, key):
         if key == 'showing':
             page_data = client.request(SHOWING_URL, headers=self.headers)
-            tlink = SoupStrainer('div', {'class': 'lister-list'})
+            tlink = SoupStrainer('ul', {'class': re.compile('^ipc-metadata-list')})
             mdiv = BeautifulSoup(page_data, "html.parser", parse_only=tlink)
-            videos = mdiv.find_all('div', {'class': 'lister-item'})
-            imdbIDs = [x.find('div', {'class': 'lister-item-image'}).get('data-tconst') for x in videos]
+            videos = mdiv.find_all('li', {'class': 'ipc-metadata-list-summary-item'})
+            imdbIDs = [x.find('a').get('href').split('/')[-2] for x in videos]
         else:
             page_data = client.request(COMING_URL, headers=self.headers)
             imdbIDs = re.findall(r'<a class="ipc-metadata-list-summary-item__t".+?href="/title/([^/]+)', page_data, re.DOTALL)
