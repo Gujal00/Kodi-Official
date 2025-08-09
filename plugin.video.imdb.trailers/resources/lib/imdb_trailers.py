@@ -761,38 +761,55 @@ class Main(object):
 
     def play_id(self):
         imdb_id = self.parameters('imdb')
+        season = self.parameters('season')
         if DEBUG:
             self.log('play_id("{0}")'.format(imdb_id))
+            if season:
+                self.log('play_id_season("{0}")'.format(season))
 
-        video = self.fetchdata_id(imdb_id)
-        if 'errors' in video.keys():
-            msg = 'Invalid IMDb ID'
-            xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
-            return
-
-        video = video.get('data').get('title')
-        if video.get('latestTrailer'):
-            videoid = video.get('latestTrailer').get('id')
-            title = video.get('titleText').get('text')
-            try:
-                year = video.get('releaseDate').get('year')
-            except AttributeError:
-                year = ''
-            plot = video.get('plot')
-            if plot:
-                plot = plot.get('plotText').get('plainText')
-            thumbnail = video.get('latestTrailer').get('thumbnail').get('url')
-            poster = video.get('primaryImage').get('url')
-            listitem = self.make_plistitem(title + ' (Trailer)', plot, year)
-            listitem.setArt({'thumb': poster,
-                             'icon': poster,
-                             'poster': poster,
-                             'fanart': thumbnail})
-            listitem.setPath(cache.get(self.fetch_video_url, cache_duration, videoid))
-            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
+        if season:
+            video = self.fetchdata_id_season(imdb_id, season)
+            if video:
+                videoid = video.get('id')
+                title = video.get('name')
+                listitem = self.make_plistitem(title)
+                listitem.setPath(cache.get(self.fetch_video_url, cache_duration, videoid))
+                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
+            else:
+                msg = 'No Trailers available'
+                xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
         else:
-            msg = 'No Trailers available'
-            xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
+            video = self.fetchdata_id(imdb_id)
+            if 'errors' in video.keys():
+                msg = 'Invalid IMDb ID'
+                xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
+                return
+
+            video = video.get('data').get('title')
+            if video.get('latestTrailer'):
+                videoid = video.get('latestTrailer').get('id')
+                title = video.get('titleText').get('text')
+                try:
+                    year = video.get('releaseDate').get('year')
+                except AttributeError:
+                    year = ''
+                plot = video.get('plot')
+                if plot:
+                    plot = plot.get('plotText').get('plainText')
+                thumbnail = video.get('latestTrailer').get('thumbnail').get('url')
+                poster = video.get('primaryImage').get('url')
+                listitem = self.make_plistitem(title + ' (Trailer)', plot, year)
+                listitem.setArt({
+                    'thumb': poster,
+                    'icon': poster,
+                    'poster': poster,
+                    'fanart': thumbnail
+                })
+                listitem.setPath(cache.get(self.fetch_video_url, cache_duration, videoid))
+                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
+            else:
+                msg = 'No Trailers available'
+                xbmcgui.Dialog().notification(_plugin, msg, _icon, 3000, False)
 
     def parameters(self, arg):
         _parameters = urllib_parse.parse_qs(urllib_parse.urlparse(sys.argv[2]).query)
@@ -801,7 +818,7 @@ class Main(object):
             val = val[0]
         return val
 
-    def make_plistitem(self, title, plot, year=0):
+    def make_plistitem(self, title, plot='', year=0):
         li = xbmcgui.ListItem(title)
         if _kodiver > 19.8:
             vtag = li.getVideoInfoTag()
@@ -944,6 +961,115 @@ class Main(object):
         pdata = {'query': self.gqlmin(query), 'variables': variables}
         data = client.request(self.api_url, headers=self.headers, post=pdata)
         return data
+
+    def fetchdata_id_season(self, imdb_id, season):
+        video = {}
+        query1 = '''
+            query TitleVideoGallerySubPage(
+                $const: ID!
+                $first: Int!
+                $filter: VideosQueryFilter
+                $sort: VideoSort
+            ) {
+                title(id: $const) {
+                    videoStrip(first: $first, filter: $filter, sort: $sort) {
+                        ...VideoGalleryItems
+                    }
+                }
+            }
+        '''
+        query2 = '''
+            query TitleVideoGalleryPagination(
+                $const: ID!
+                $first: Int!
+                $after: ID !
+                $filter: VideosQueryFilter
+                $sort: VideoSort
+            ) {
+                title(id: $const) {
+                    videoStrip(first: $first, after: $after, filter: $filter, sort: $sort) {
+                        ...VideoGalleryItems
+                    }
+                }
+            }
+        '''
+        fragment = '''
+            fragment VideoGalleryItems on VideoConnection {
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                edges {
+                    position
+                    node {
+                        id
+                        contentType {
+                            displayName {
+                                value
+                            }
+                            id
+                        }
+                        name {
+                            value
+                        }
+                    }
+                }
+            }
+        '''
+
+        opname = ['TitleVideoGallerySubPage', 'TitleVideoGalleryPagination']
+        page_size = 100
+        vpar = {
+            "const": imdb_id,
+            "first": page_size,
+            "filter": {
+                "maturityLevel": "INCLUDE_MATURE"
+            },
+            "sort": {
+                "by": "DATE",
+                "order": "DESC"
+            }
+        }
+
+        pdata = {
+            'operationName': opname[0],
+            'query': self.gqlmin(query1 + fragment),
+            'variables': vpar
+        }
+
+        data = client.request(self.api_url, headers=self.headers, post=pdata)
+        try:
+            data = data.get('data').get('title').get('videoStrip')
+            videos = data.get('edges')
+            trailers = [{'id': x.get('node').get('id'), 'name': x.get('node').get('name').get('value')} for x in videos
+                        if 'trailer' in x.get('node').get('contentType').get('id')]
+            next_page = data.get('pageInfo').get('hasNextPage')
+            while next_page:
+                vpar.update({"after": data.get('pageInfo').get('endCursor')})
+                pdata = {
+                    'operationName': opname[1],
+                    'query': self.gqlmin(query2 + fragment),
+                    'variables': vpar
+                }
+                data = client.request(self.api_url, headers=self.headers, post=pdata)
+                data = data.get('data').get('title').get('videoStrip')
+                videos = data.get('edges')
+                trailers += [{'id': x.get('node').get('id'), 'name': x.get('node').get('name').get('value')} for x in videos
+                             if 'trailer' in x.get('node').get('contentType').get('id')]
+                next_page = data.get('pageInfo').get('hasNextPage')
+            if trailers:
+                rel_trailers = [x for x in trailers if f'season {season}' in x.get('name').lower()]
+                if rel_trailers:
+                    if len(rel_trailers) > 1:
+                        rel_trailers = [x for x in rel_trailers if 'teaser' not in x.get('name').lower()]
+                        rel_trailers = [x for x in rel_trailers if 'official' in x.get('name').lower()]
+                    video = rel_trailers[0]
+                else:
+                    video = trailers[0]
+        except:
+            pass
+
+        return video
 
     def fetchdata(self, key):
         vpar = {'limit': 100}
