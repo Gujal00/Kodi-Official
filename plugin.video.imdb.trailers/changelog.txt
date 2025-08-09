@@ -1,5 +1,10 @@
 plugin.video.imdb.trailers:
 ---------------------------
+v2.1.22 (20250809)
+[fix] In Cinemas listing
+[new] Play specific season trailer for tvshows
+      plugin://plugin.video.imdb.trailers/?action=play_id&imdb={imdb_id}&season={season_number}
+
 v2.1.21 (20250513)
 [fix] listing when character names not available
 [fix] add '(Trailer)' to title to avoid scrobbling by trakt module during playback
