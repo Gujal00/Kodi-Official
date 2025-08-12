@@ -20,7 +20,6 @@
 import re
 import sys
 import datetime
-import json
 import threading
 from kodi_six import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 from bs4 import BeautifulSoup, SoupStrainer
@@ -723,24 +722,42 @@ class Main(object):
     def fetch_video_url(self, video_id):
         if DEBUG:
             self.log('fetch_video_url("{0}")'.format(video_id))
-        vidurl = DETAILS_PAGE.format(video_id)
-        pagedata = client.request(vidurl, headers=self.headers)
-        r = re.search(r'application/json">([^<]+)', pagedata)
-        if r:
-            details = json.loads(r.group(1)).get('props', {}).get('pageProps', {}).get('videoPlaybackData', {}).get('video')
-            if details:
-                details = {i.get('displayName').get('value'): i.get('url') for i in details.get('playbackURLs') if i.get('videoMimeType') == 'MP4'}
-                vids = [(x[:-1], details[x]) for x in details.keys() if 'p' in x]
-                vids.sort(key=lambda x: int(x[0]), reverse=True)
+        query = '''query VideoPlayback(
+            $viconst: ID!
+        ) {
+            video(id: $viconst) {
+                ...SharedVideoAllPlaybackUrls
+            }
+        }
+        '''
+        fragment = '''fragment SharedVideoAllPlaybackUrls on Video {
+            playbackURLs {
+                displayName {
+                    value
+                }
+                videoMimeType
+                url
+            }
+        }
+        '''
+        pdata = {
+            'operationName': "VideoPlayback",
+            'query': self.gqlmin(query + fragment),
+            'variables': {"viconst": video_id}
+        }
+        data = client.request(self.api_url, headers=self.headers, post=pdata)
+        vids = data.get('data').get('video').get('playbackURLs')
+        vids = {i.get('displayName').get('value'): i.get('url') for i in vids
+                if i.get('videoMimeType') == 'MP4'}
+        vids = [(x[:-1], y) for x, y in vids.items() if 'p' in x]
+        vids.sort(key=lambda x: int(x[0]), reverse=True)
+        if DEBUG:
+            self.log('Found %s videos' % len(vids))
+        for qual, vid in vids:
+            if int(qual) <= quality:
                 if DEBUG:
-                    self.log('Found %s videos' % len(vids))
-                for qual, vid in vids:
-                    if int(qual) <= quality:
-                        if DEBUG:
-                            self.log('videoURL: %s' % vid)
-                        return vid
-
-        return None
+                    self.log('videoURL: %s' % vid)
+                return vid
 
     def play(self):
         if DEBUG:
@@ -964,21 +981,22 @@ class Main(object):
 
     def fetchdata_id_season(self, imdb_id, season):
         video = {}
-        query1 = '''
-            query TitleVideoGallerySubPage(
-                $const: ID!
-                $first: Int!
-                $filter: VideosQueryFilter
-                $sort: VideoSort
-            ) {
-                title(id: $const) {
-                    videoStrip(first: $first, filter: $filter, sort: $sort) {
-                        ...VideoGalleryItems
+        query = [
+            '''
+                query TitleVideoGallerySubPage(
+                    $const: ID!
+                    $first: Int!
+                    $filter: VideosQueryFilter
+                    $sort: VideoSort
+                ) {
+                    title(id: $const) {
+                        videoStrip(first: $first, filter: $filter, sort: $sort) {
+                            ...VideoGalleryItems
+                        }
                     }
                 }
-            }
-        '''
-        query2 = '''
+            ''',
+            '''
             query TitleVideoGalleryPagination(
                 $const: ID!
                 $first: Int!
@@ -993,6 +1011,8 @@ class Main(object):
                 }
             }
         '''
+        ]
+
         fragment = '''
             fragment VideoGalleryItems on VideoConnection {
                 pageInfo {
@@ -1023,7 +1043,8 @@ class Main(object):
             "const": imdb_id,
             "first": page_size,
             "filter": {
-                "maturityLevel": "INCLUDE_MATURE"
+                "maturityLevel": "INCLUDE_MATURE",
+                "types": ["TRAILER"]
             },
             "sort": {
                 "by": "DATE",
@@ -1033,36 +1054,34 @@ class Main(object):
 
         pdata = {
             'operationName': opname[0],
-            'query': self.gqlmin(query1 + fragment),
+            'query': self.gqlmin(query[0] + fragment),
             'variables': vpar
         }
 
         data = client.request(self.api_url, headers=self.headers, post=pdata)
         try:
             data = data.get('data').get('title').get('videoStrip')
-            videos = data.get('edges')
-            trailers = [{'id': x.get('node').get('id'), 'name': x.get('node').get('name').get('value')} for x in videos
-                        if 'trailer' in x.get('node').get('contentType').get('id')]
+            trailers = [{'id': x.get('node').get('id'), 'name': x.get('node').get('name').get('value')} for x in data.get('edges')]
             next_page = data.get('pageInfo').get('hasNextPage')
             while next_page:
                 vpar.update({"after": data.get('pageInfo').get('endCursor')})
                 pdata = {
                     'operationName': opname[1],
-                    'query': self.gqlmin(query2 + fragment),
+                    'query': self.gqlmin(query[1] + fragment),
                     'variables': vpar
                 }
                 data = client.request(self.api_url, headers=self.headers, post=pdata)
                 data = data.get('data').get('title').get('videoStrip')
-                videos = data.get('edges')
-                trailers += [{'id': x.get('node').get('id'), 'name': x.get('node').get('name').get('value')} for x in videos
-                             if 'trailer' in x.get('node').get('contentType').get('id')]
+                trailers += [{'id': x.get('node').get('id'), 'name': x.get('node').get('name').get('value')} for x in data.get('edges')]
                 next_page = data.get('pageInfo').get('hasNextPage')
             if trailers:
                 rel_trailers = [x for x in trailers if f'season {season}' in x.get('name').lower()]
                 if rel_trailers:
                     if len(rel_trailers) > 1:
-                        rel_trailers = [x for x in rel_trailers if 'teaser' not in x.get('name').lower()]
-                        rel_trailers = [x for x in rel_trailers if 'official' in x.get('name').lower()]
+                        rel_trailers = [
+                            x for x in rel_trailers
+                            if all(y not in x.get('name').lower() for y in ['teaser', 'preview', 'episode'])
+                        ]
                     video = rel_trailers[0]
                 else:
                     video = trailers[0]
