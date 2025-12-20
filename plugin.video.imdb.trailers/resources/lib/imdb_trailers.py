@@ -358,6 +358,8 @@ class Main(object):
         xbmcplugin.endOfDirectory(int(sys.argv[1]), updateListing=True, cacheToDisc=False)
 
     def process_imdbid(self, imdbID):
+        if DEBUG:
+            self.log('process_imdbid({0})'.format(imdbID))
         video = self.fetchdata_id(imdbID)
         video = video.get('data').get('title')
         title = video.get('titleText').get('text')
@@ -772,8 +774,12 @@ class Main(object):
             plot = vtag.getPlot()
         # only need to add label, icon and thumbnail, setInfo() and addSortMethod() takes care of label2
         listitem = self.make_plistitem(title + ' (Trailer)', plot)
+        listitem.setProperty("script.trakt.exclude", "1")
         listitem.setArt({'thumb': thumbnail})
-        listitem.setPath(cache.get(self.fetch_video_url, cache_duration, self.parameters('videoid')))
+        play_url = cache.get(self.fetch_video_url, cache_duration, self.parameters('videoid'))
+        if DEBUG:
+            self.log('Playing url {0}'.format(play_url))
+        listitem.setPath(play_url)
         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
 
     def play_id(self):
@@ -790,7 +796,11 @@ class Main(object):
                 videoid = video.get('id')
                 title = video.get('name')
                 listitem = self.make_plistitem(title)
-                listitem.setPath(cache.get(self.fetch_video_url, cache_duration, videoid))
+                listitem.setProperty("script.trakt.exclude", "1")
+                play_url = cache.get(self.fetch_video_url, cache_duration, videoid)
+                if DEBUG:
+                    self.log('Playing url {0}'.format(play_url))
+                listitem.setPath(play_url)
                 xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
             else:
                 msg = 'No Trailers available'
@@ -816,13 +826,17 @@ class Main(object):
                 thumbnail = video.get('latestTrailer').get('thumbnail').get('url')
                 poster = video.get('primaryImage').get('url')
                 listitem = self.make_plistitem(title + ' (Trailer)', plot, year)
+                listitem.setProperty("script.trakt.exclude", "1")
                 listitem.setArt({
                     'thumb': poster,
                     'icon': poster,
                     'poster': poster,
                     'fanart': thumbnail
                 })
-                listitem.setPath(cache.get(self.fetch_video_url, cache_duration, videoid))
+                play_url = cache.get(self.fetch_video_url, cache_duration, videoid)
+                if DEBUG:
+                    self.log('Playing url {0}'.format(play_url))
+                listitem.setPath(play_url)
                 xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=listitem)
             else:
                 msg = 'No Trailers available'
@@ -983,18 +997,18 @@ class Main(object):
         video = {}
         query = [
             '''
-                query TitleVideoGallerySubPage(
-                    $const: ID!
-                    $first: Int!
-                    $filter: VideosQueryFilter
-                    $sort: VideoSort
-                ) {
-                    title(id: $const) {
-                        videoStrip(first: $first, filter: $filter, sort: $sort) {
-                            ...VideoGalleryItems
-                        }
+            query TitleVideoGallerySubPage(
+                $const: ID!
+                $first: Int!
+                $filter: VideosQueryFilter
+                $sort: VideoSort
+            ) {
+                title(id: $const) {
+                    videoStrip(first: $first, filter: $filter, sort: $sort) {
+                        ...VideoGalleryItems
                     }
                 }
+            }
             ''',
             '''
             query TitleVideoGalleryPagination(
@@ -1013,28 +1027,27 @@ class Main(object):
         '''
         ]
 
-        fragment = '''
-            fragment VideoGalleryItems on VideoConnection {
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
-                edges {
-                    position
-                    node {
-                        id
-                        contentType {
-                            displayName {
-                                value
-                            }
-                            id
-                        }
-                        name {
+        fragment = '''fragment VideoGalleryItems on VideoConnection {
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+            edges {
+                position
+                node {
+                    id
+                    contentType {
+                        displayName {
                             value
                         }
+                        id
+                    }
+                    name {
+                        value
                     }
                 }
             }
+        }
         '''
 
         opname = ['TitleVideoGallerySubPage', 'TitleVideoGalleryPagination']
