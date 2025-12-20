@@ -39,6 +39,7 @@ _language = _addon.getLocalizedString
 _settings = _addon.getSetting
 _addonpath = 'special://profile/addon_data/{}/'.format(_addonID)
 _kodiver = float(xbmcaddon.Addon('xbmc.addon').getAddonInfo('version')[:4])
+window = xbmcgui.Window(10000)
 # DEBUG
 DEBUG = _settings("DebugMode") == "true"
 
@@ -53,6 +54,7 @@ if not xbmcvfs.exists(_addonpath + 'settings.xml'):
 
 class Main(object):
     def __init__(self):
+        self.itemProperty = f'{_addonID}.container.items'
         self.base_url = 'https://archive.org/'
         self.search_url = self.base_url + 'services/search/beta/page_production/'
         self.img_path = self.base_url + 'services/img/'
@@ -68,12 +70,18 @@ class Main(object):
             page = int(self.parameters('page'))
             target = self.parameters('target')
             self.list_items(target, page, content_type)
+        elif action == 'list_items2':
+            self.list_items2(content_type)
         elif action == 'list_collections':
             page = int(self.parameters('page'))
             self.list_collections(page, content_type)
         elif action == 'play':
             item_id = self.parameters('target')
             self.play(item_id, content_type)
+        elif action == 'play_item':
+            item = self.parameters('target')
+            title = self.parameters('title')
+            self.play_item(item, title, content_type)
         elif action == 'search':
             self.search(content_type)
         elif action == 'search_word':
@@ -217,7 +225,7 @@ class Main(object):
 
     def list_items(self, target, page, content_type):
         if DEBUG:
-            self.log('list_items("{0}, {1}, {2}")'.format(target, page, content_type))
+            self.log(f'list_items({target}, {page}, {content_type})')
 
         filter_map = '{{"mediatype":{{"{}":"inc","etree":"inc"}}}}'.format('movies' if content_type == 'video' else 'audio')
         data = cache.get(self.get_items, cache_duration, filter_map, target, page)
@@ -240,7 +248,7 @@ class Main(object):
                     'thumb': self.img_path + slug,
                     'fanart': _fanart
                 })
-                listitem.setProperty('IsPlayable', 'true')
+                listitem.setProperty('IsPlayable', 'false')
                 url = sys.argv[0] + '?' + urllib.parse.urlencode({
                     'action': 'play',
                     'target': slug,
@@ -293,20 +301,21 @@ class Main(object):
             search_text = urllib.parse.quote(keyboard.getText())
         else:
             search_text = ''
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=False)
-        if len(search_text) > 2:
-            url = sys.argv[0] + '?' + urllib.parse.urlencode({'action': 'search_word',
-                                                              'keyword': search_text,
-                                                              'content_type': content_type,
-                                                              'page': 1})
-            xbmc.executebuiltin("Container.Update({0},replace)".format(url))
-        else:
-            xbmcgui.Dialog().notification(_plugin, _language(30202), _icon, 3000, False)
-            xbmc.executebuiltin("Container.Update({0},replace)".format(sys.argv[0]))
+        # xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=False)
+        page = 1
+    #     if len(search_text) > 2:
+    #         url = sys.argv[0] + '?' + urllib.parse.urlencode({'action': 'search_word',
+    #                                                           'keyword': search_text,
+    #                                                           'content_type': content_type,
+    #                                                           'page': 1})
+    #         xbmc.executebuiltin("Container.Update({0},replace)".format(url))
+    #     else:
+    #         xbmcgui.Dialog().notification(_plugin, _language(30202), _icon, 3000, False)
+    #         xbmc.executebuiltin("Container.Update({0},replace)".format(sys.argv[0]))
 
-    def search_word(self, search_text, page, content_type):
-        if DEBUG:
-            self.log('search_word("{0}, page {1}, {2}")'.format(search_text, page, content_type))
+    # def search_word(self, search_text, page, content_type):
+    #     if DEBUG:
+    #         self.log('search_word("{0}, page {1}, {2}")'.format(search_text, page, content_type))
         filter_map = '{{"mediatype":{{"{}":"inc","etree":"inc"}}}}'.format('movies' if content_type == 'video' else 'audio')
         data = cache.get(self.get_search_items, cache_duration, filter_map, search_text, page)
         if data:
@@ -363,35 +372,59 @@ class Main(object):
             # End of directory...
             xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
 
-    def play(self, item_id, content_type):
-        url = self.item_path + item_id
-        if DEBUG:
-            self.log('play("{}") {}'.format(item_id, content_type))
+    def list_items2(self, content_type):
+        xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
+        items = json.loads(window.getProperty(self.itemProperty))
+        for item in items:
+            title = item.get('title')
+            sources = item.get('sources')
+            for src in sources:
+                surl = src.get('file')
+                labels = {'title': f'{title} [COLOR lime][I]{src.get("type")}[/I][/COLOR]'}
+                listitem = self.make_listitem(labels, content_type)
+                listitem.setArt({
+                    'icon': _icon,
+                    'thumb': _icon,
+                    'fanart': _fanart
+                })
+                listitem.setProperty('IsPlayable', 'true')
+                url = sys.argv[0] + '?' + urllib.parse.urlencode({
+                    'action': 'play_item',
+                    'target': urllib.parse.urljoin(self.base_url, surl),
+                    'title': title,
+                    'content_type': content_type
+                })
+                xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
+        # Sort methods and content type...
+        xbmcplugin.setContent(int(sys.argv[1]), 'videos' if content_type == 'video' else 'songs')
+        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+        # End of directory...
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
 
+    def play(self, item_id, content_type):
+        if DEBUG:
+            self.log(f'play("{item_id}", {content_type})')
+
+        url = self.item_path + item_id
         html = client.request(url, headers=self.headers)
-        # jsob = re.search('''class="js-play8-playlist".+?value='([^']+)''', html)
         jsob = re.search('''<play-av.+?playlist='([^']+)''', html)
         if jsob:
             surl = ''
             data = json.loads(jsob.group(1))
             total = len(data)
-            if total > 1:
-                sources = [(i.get('title'), i.get('sources')[0].get('file')) for i in data]
-                if content_type == 'video':
-                    ret = xbmcgui.Dialog().select(_language(30203), [source[0] for source in sources])
-                    if ret == -1:
-                        return
-                    surl = urllib.parse.urljoin(self.base_url, sources[ret][1])
-                    item_id = sources[ret][0]
-                else:
-                    if DEBUG:
-                        self.log('Found {} audio items'.format(total))
-                    playlist = xbmc.PlayList(xbmc.PLAYLIST_MUSIC)
-                    playlist.clear()
-                    for title, source in sources:
-                        li = self.make_listitem({'title': title}, content_type)
-                        playlist.add(url=urllib.parse.urljoin(self.base_url, source), listitem=li)
-            elif total == 1:
+            if DEBUG:
+                self.log(f'Found {total} {content_type} items')
+            if total > 2:
+                window.clearProperty(self.itemProperty)
+                window.setProperty(self.itemProperty, json.dumps(data))
+                params = {'action': 'list_items2', 'content_type': content_type}
+                xbmc.executebuiltin(
+                    f'Container.Update({sys.argv[0]}?{urllib.parse.urlencode(params)})'
+                )
+                return
+
+            else:
                 jd = client.request(url.replace('/details/', '/metadata/'))
                 sources = [i for i in jd.get('files') if 'height' in i.keys() and '.jpg' not in i.get('name')]
                 if len(sources) > 1:
@@ -412,16 +445,17 @@ class Main(object):
                     jd.get('dir'),
                     urllib.parse.quote(sources[ret].get('name'))
                 )
+                self.play_item(surl, item_id, content_type)
 
-            if total > 1 and content_type == 'audio':
-                xbmc.Player().play(playlist)
-            else:
-                li = self.make_listitem({'title': item_id}, content_type)
-                li.setArt({'fanart': _fanart})
-                li.setPath(surl)
-                if DEBUG:
-                    self.log('playing("{}") {}'.format(surl, content_type))
-                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=li)
+    def play_item(self, surl, title, content_type):
+        li = self.make_listitem({'title': title}, content_type)
+        li.setArt({'fanart': _fanart})
+        li.setPath(surl)
+        li.setProperty('IsPlayable', 'true')
+        if DEBUG:
+            self.log('play_item {} {}'.format(surl, content_type))
+        # xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=li)
+        xbmc.Player().play(surl, li)
 
     def parameters(self, arg):
         _parameters = urllib.parse.parse_qs(urllib.parse.urlparse(sys.argv[2]).query)
