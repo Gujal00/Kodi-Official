@@ -305,7 +305,7 @@ class Main(object):
         else:
             search_text = ''
         xbmcplugin.endOfDirectory(_handle, updateListing=True, cacheToDisc=False)
-        xbmc.sleep(20)
+        xbmc.sleep(50)
         if len(search_text) > 2:
             url = _pluginURL + '?' + urllib.parse.urlencode({
                 'action': 'search_word',
@@ -370,11 +370,11 @@ class Main(object):
                 xbmcplugin.addDirectoryItem(_handle, url, listitem, True)
 
             # Sort methods and content type...
-            xbmcplugin.setContent(int(sys.argv[1]), 'videos' if content_type == 'video' else 'songs')
-            xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
-            xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+            xbmcplugin.setContent(int(_handle), 'videos' if content_type == 'video' else 'songs')
+            xbmcplugin.addSortMethod(int(_handle), xbmcplugin.SORT_METHOD_UNSORTED)
+            xbmcplugin.addSortMethod(int(_handle), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
             # End of directory...
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
+            xbmcplugin.endOfDirectory(int(_handle), cacheToDisc=True)
 
     def list_items2(self, content_type):
         xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
@@ -392,19 +392,19 @@ class Main(object):
                     'fanart': _fanart
                 })
                 listitem.setProperty('IsPlayable', 'true')
-                url = sys.argv[0] + '?' + urllib.parse.urlencode({
+                url = _pluginURL + '?' + urllib.parse.urlencode({
                     'action': 'play_item',
                     'target': urllib.parse.urljoin(self.base_url, surl),
                     'title': title,
                     'content_type': content_type
                 })
-                xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, False)
+                xbmcplugin.addDirectoryItem(int(_handle), url, listitem, False)
         # Sort methods and content type...
-        xbmcplugin.setContent(int(sys.argv[1]), 'videos' if content_type == 'video' else 'songs')
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
-        xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
+        xbmcplugin.setContent(int(_handle), 'videos' if content_type == 'video' else 'songs')
+        xbmcplugin.addSortMethod(int(_handle), xbmcplugin.SORT_METHOD_UNSORTED)
+        xbmcplugin.addSortMethod(int(_handle), xbmcplugin.SORT_METHOD_VIDEO_TITLE)
         # End of directory...
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=True)
+        xbmcplugin.endOfDirectory(int(_handle), cacheToDisc=True)
 
     def play(self, item_id, content_type):
         if DEBUG:
@@ -422,9 +422,10 @@ class Main(object):
             if total > 2:
                 window.clearProperty(self.itemProperty)
                 window.setProperty(self.itemProperty, json.dumps(data))
+                # xbmc.sleep(50)
                 params = {'action': 'list_items2', 'content_type': content_type}
                 xbmc.executebuiltin(
-                    f'Container.Update({sys.argv[0]}?{urllib.parse.urlencode(params)})'
+                    f'Container.Update({_pluginURL}?{urllib.parse.urlencode(params)})'
                 )
                 return
 
@@ -450,6 +451,10 @@ class Main(object):
                     urllib.parse.quote(sources[ret].get('name'))
                 )
                 self.play_item(surl, item_id, content_type)
+        elif content_type == 'video':
+            r = re.search(r'property="og:video"\s*content="([^"]+)', html)
+            if r:
+                self.play_item(r.group(1), item_id, content_type)
 
     def play_item(self, surl, title, content_type):
         li = self.make_listitem({'title': title}, content_type)
@@ -458,8 +463,7 @@ class Main(object):
         li.setProperty('IsPlayable', 'true')
         if DEBUG:
             self.log('play_item {} {}'.format(surl, content_type))
-        # xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem=li)
-        xbmc.Player().play(surl, li)
+        xbmcplugin.setResolvedUrl(int(_handle), True, listitem=li)
 
     def parameters(self, arg):
         _parameters = urllib.parse.parse_qs(urllib.parse.urlparse(sys.argv[2]).query)
