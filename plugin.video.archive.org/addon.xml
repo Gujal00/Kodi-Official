@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.archive.org" name="Internet Archive" version="1.0.0" provider-name="gujal">
+<addon id="plugin.video.archive.org" name="Internet Archive" version="1.0.1" provider-name="gujal">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
@@ -10,6 +10,9 @@
     <summary lang="en_GB">Internet Archive add-on</summary>
     <description lang="en_GB">Watch and listen to media archived by Internet Archive</description>
     <disclaimer lang="en_GB">This third party addon is not in any way commissioned or endorsed by Internet Archive</disclaimer>
+    <news>v1.0.1
+- Fix multi-track live-music (etree) playback via the archive.org metadata API
+- Add "Play All" for audio concerts</news>
     <language></language>
     <platform>all</platform>
     <license>GPL-2.0</license>
