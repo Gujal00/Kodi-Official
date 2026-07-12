@@ -76,6 +76,12 @@ class Main(object):
         elif action == 'play':
             item_id = self.parameters('target')
             self.play(item_id, content_type)
+        elif action == 'tracks':
+            item_id = self.parameters('target')
+            self.list_tracks(item_id, content_type)
+        elif action == 'playall':
+            item_id = self.parameters('target')
+            self.play_all(item_id, content_type)
         elif action == 'search':
             self.search(content_type)
         elif action == 'search_word':
@@ -243,13 +249,24 @@ class Main(object):
                     'thumb': self.img_path + slug,
                     'fanart': _fanart
                 })
-                listitem.setProperty('IsPlayable', 'true')
-                url = _pluginURL + '?' + urllib.parse.urlencode({
-                    'action': 'play',
-                    'target': slug,
-                    'content_type': content_type
-                })
-                xbmcplugin.addDirectoryItem(_handle, url, listitem, False)
+                if content_type == 'audio':
+                    # audio items (incl. multi-track live-music concerts) open as a
+                    # folder of tracks resolved via the metadata API (see list_tracks)
+                    listitem.setProperty('IsPlayable', 'false')
+                    url = _pluginURL + '?' + urllib.parse.urlencode({
+                        'action': 'tracks',
+                        'target': slug,
+                        'content_type': content_type
+                    })
+                    xbmcplugin.addDirectoryItem(_handle, url, listitem, True)
+                else:
+                    listitem.setProperty('IsPlayable', 'true')
+                    url = _pluginURL + '?' + urllib.parse.urlencode({
+                        'action': 'play',
+                        'target': slug,
+                        'content_type': content_type
+                    })
+                    xbmcplugin.addDirectoryItem(_handle, url, listitem, False)
 
             total = data.get('total')
             if page * 100 < total:
@@ -333,13 +350,24 @@ class Main(object):
                     'thumb': self.img_path + slug,
                     'fanart': _fanart
                 })
-                listitem.setProperty('IsPlayable', 'true')
-                url = _pluginURL + '?' + urllib.parse.urlencode({
-                    'action': 'play',
-                    'target': slug,
-                    'content_type': content_type
-                })
-                xbmcplugin.addDirectoryItem(_handle, url, listitem, False)
+                if content_type == 'audio':
+                    # audio items (incl. multi-track live-music concerts) open as a
+                    # folder of tracks resolved via the metadata API (see list_tracks)
+                    listitem.setProperty('IsPlayable', 'false')
+                    url = _pluginURL + '?' + urllib.parse.urlencode({
+                        'action': 'tracks',
+                        'target': slug,
+                        'content_type': content_type
+                    })
+                    xbmcplugin.addDirectoryItem(_handle, url, listitem, True)
+                else:
+                    listitem.setProperty('IsPlayable', 'true')
+                    url = _pluginURL + '?' + urllib.parse.urlencode({
+                        'action': 'play',
+                        'target': slug,
+                        'content_type': content_type
+                    })
+                    xbmcplugin.addDirectoryItem(_handle, url, listitem, False)
 
             total = data.get('total')
             if page * 100 < total:
@@ -367,6 +395,101 @@ class Main(object):
             xbmcplugin.addSortMethod(_handle, xbmcplugin.SORT_METHOD_VIDEO_TITLE)
             # End of directory...
             xbmcplugin.endOfDirectory(_handle, cacheToDisc=False)
+
+    def _track_sources(self, item_id, content_type):
+        """Resolve an archive.org item to a sorted list of (stream_url, labels)
+        using the stable metadata API instead of scraping the web player."""
+        jd = client.request('https://archive.org/metadata/' + item_id)
+        if not isinstance(jd, dict) or not jd.get('files'):
+            return []
+        servers = jd.get('workable_servers') or ([jd.get('server')] if jd.get('server') else [])
+        ddir = jd.get('dir', '')
+        if not servers or not ddir:
+            return []
+        if content_type == 'video':
+            exts = ('mp4', 'm4v', 'webm', 'ogv', 'mpg', 'mpeg', 'mkv', 'avi')
+        else:
+            exts = ('mp3', 'ogg', 'flac', 'm4a')
+        by_ext = {}
+        for f in jd.get('files', []):
+            name = f.get('name', '')
+            if '.' in name:
+                ext = name.rsplit('.', 1)[-1].lower()
+                if ext in exts:
+                    by_ext.setdefault(ext, []).append(f)
+        chosen = next((e for e in exts if e in by_ext), None)
+        if not chosen:
+            return []
+
+        def tkey(f):
+            try:
+                return (0, int(str(f.get('track')).split('/')[0]))
+            except Exception:
+                return (1, f.get('name', ''))
+
+        out = []
+        for f in sorted(by_ext[chosen], key=tkey):
+            surl = 'https://{0}{1}/{2}'.format(
+                random.choice(servers), ddir, urllib.parse.quote(f.get('name')))
+            labels = {'title': f.get('title') or f.get('name').rsplit('.', 1)[0]}
+            try:
+                labels['duration'] = int(float(f.get('length')))
+            except Exception:
+                pass
+            out.append((surl, labels))
+        return out
+
+    def list_tracks(self, item_id, content_type):
+        if DEBUG:
+            self.log('list_tracks("{}") {}'.format(item_id, content_type))
+        try:
+            sources = self._track_sources(item_id, content_type)
+            if not sources:
+                xbmcplugin.endOfDirectory(_handle)
+                return
+            items = []
+            # pinned "Play All" entry
+            pa = self.make_listitem({'title': '[B]▶ Play All[/B]'}, content_type)
+            pa.setArt({'thumb': self.img_path + item_id, 'fanart': _fanart})
+            pa.setProperty('SpecialSort', 'top')
+            pa.setProperty('IsPlayable', 'false')
+            pa_url = _pluginURL + '?' + urllib.parse.urlencode({
+                'action': 'playall', 'target': item_id, 'content_type': content_type})
+            items.append((pa_url, pa, False))
+            for surl, labels in sources:
+                li = self.make_listitem(labels, content_type)
+                li.setArt({'thumb': self.img_path + item_id, 'fanart': _fanart})
+                li.setProperty('IsPlayable', 'true')
+                li.setPath(surl)
+                items.append((surl, li, False))
+            xbmcplugin.addDirectoryItems(_handle, items)
+            xbmcplugin.setContent(_handle, 'videos' if content_type == 'video' else 'songs')
+            xbmcplugin.endOfDirectory(_handle)
+        except Exception as e:
+            import traceback
+            self.log('list_tracks EXCEPTION: {}'.format(e))
+            self.log(traceback.format_exc())
+            xbmcplugin.endOfDirectory(_handle)
+
+    def play_all(self, item_id, content_type):
+        if DEBUG:
+            self.log('play_all("{}") {}'.format(item_id, content_type))
+        try:
+            sources = self._track_sources(item_id, content_type)
+            if not sources:
+                return
+            plt = xbmc.PLAYLIST_VIDEO if content_type == 'video' else xbmc.PLAYLIST_MUSIC
+            playlist = xbmc.PlayList(plt)
+            playlist.clear()
+            for surl, labels in sources:
+                li = self.make_listitem(labels, content_type)
+                li.setPath(surl)
+                playlist.add(url=surl, listitem=li)
+            xbmc.Player().play(playlist)
+        except Exception as e:
+            import traceback
+            self.log('play_all EXCEPTION: {}'.format(e))
+            self.log(traceback.format_exc())
 
     def play(self, item_id, content_type):
         url = self.item_path + item_id
